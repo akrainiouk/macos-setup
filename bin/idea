@@ -1,0 +1,3 @@
+#!/bin/sh
+args=$@
+open -a "IntelliJ IDEA" $args

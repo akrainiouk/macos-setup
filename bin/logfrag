@@ -1,0 +1,158 @@
+#!/usr/bin/perl
+use POSIX;
+use POSIX qw/mktime/;
+use Getopt::Long;
+
+############################################################
+# setup
+############################################################
+
+GetOptions(
+	"start=s" => \$startTime,
+	"end=s" => \$stopTime,
+	"relaxed" => \$relaxed
+) || usage();
+
+$useDate = undef();
+$infile = $ARGV[0];
+if ($startTime) {
+	$startTime = logTime("", $startTime);
+} else {
+	print("start time undefined\n");
+	usage();
+}
+if ($stopTime) {
+	$stopTime = logTime("", $stopTime);
+} else {
+	print("end time undefined\n");
+	usage();
+}
+if ($relaxed) {
+	$timeStampPattern = "^[0-9]{4}-[0-9-]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} ";
+} else {
+	$timeStampPattern = "^[0-9]{4}-[0-9-]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3} ";
+}
+
+###########################################################
+# main
+###########################################################
+
+open(inf, $infile);
+
+$startPos = findTimeStamp(*inf, $startTime);
+$stopPos = findTimeStamp(*inf, $stopTime);
+
+seekLine(*inf, $startPos);
+while (tell(inf) < $stopPos) {
+	$line=<inf>;
+	print("$line");
+}
+exit 0;
+
+############################################################
+# subroutines
+############################################################
+
+sub MAX_LEN { 1000000 }
+
+sub usage {
+	print("Usage: logfrag --start <start-time> --end <end-time> <log-file>\n");
+	exit 1;
+}
+
+#
+# Converts log time stamp into a system time representation
+#
+sub logTime {
+	my ($dateStr, $timeStr) = @_;
+	my (@t, @d);
+	if ($useDate) {
+		@d=split(/-/, $dateStr);
+	} else {
+		@d = (2005, 1, 1);
+	}
+	@t=split(/[:\.]/, $timeStr);
+	$tt = $t[3];
+	return mktime($t[2], $t[1], $t[0], $d[2], $d[1] - 1, $d[0] - 1900) + ".$tt";
+}
+
+#
+# Positions file pointer at the beginning of the line
+# that is located on the specified position.
+#
+sub seekLine {
+	my ($fh, $pos) = @_;
+	my $line;
+	for (my $p = $pos; $p >= ($pos - MAX_LEN); $p--) {
+		seek($fh, $p, 0) || die "unable to seek: $p";
+		$line = <$fh>;
+		chomp $line;
+		if ($p <= 0) {
+			seek($fh, $p, 0) || die "unable to seek: $p";
+			return $p;
+		} elsif (length($line) == 0) {
+			seek($fh, $p + 1, 0) || die "unable to seek: $p";
+			return $p + 1;
+		}
+	}
+	die "Line length exceeds 1000000 or non text file $pos";
+}
+
+#
+# Returns time stamp corresponding to the
+# specified file position
+# new file position is unspecified
+#
+sub getTimeStamp {
+	my ($fh, $pos) = @_;
+	my ($line, @fields);
+
+	seekLine(*$fh, $pos);
+	while ($line = <$fh>) {
+		if ($line =~ /$timeStampPattern/) {
+			@fields = split(/ /, $line);
+			my $t = logTime($fields[0], $fields[1]);
+			return $t;
+		}
+	}
+	return INT_MAX;
+}
+
+#
+# Performs binary search to find the line
+# that has time stamp closest to the specified
+# one
+# Usage:
+#	findTimeStamp(*FH, $timeStamp)
+# Parameters:
+#	*FH	- a file handle
+#	$timeStamp - time stamp to search for
+# Returns:
+#	new file position.
+# Side effects:
+#	file position after the function returns
+#	is unspecified
+#
+sub findTimeStamp {
+	my ($fh, $timeStamp) = @_;
+	my @data = stat($fh);
+	my $stopPos = $data[7];
+	my $startPos = 0;
+	my ($p, $t);
+
+	# Do binary search in the log file
+	while (abs($startPos - $stopPos) > 1) {
+		$p = ($startPos + $stopPos) / 2;
+		$t = getTimeStamp(*$fh, $p);
+#print("$startPos:$p:$stopPos\n");	
+		if ($t < $timeStamp) {
+			$startPos = $p;
+		} elsif ($t > $timeStamp) {
+			$stopPos = $p;
+		} else {
+			return $p;
+		}
+	}
+	return $p;
+}
+

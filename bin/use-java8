@@ -1,0 +1,5 @@
+#!/bin/sh
+rm $HOME/lib/java
+ln -s $HOME/lib/versions/java8 $HOME/lib/java
+echo "Switched to use java8"
+java -version

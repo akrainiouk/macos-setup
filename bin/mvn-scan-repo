@@ -1,0 +1,14 @@
+#!/bin/sh
+for file in $(find . -name '*.jar')
+do
+  if [ -e $file ]
+  then 
+    unzip -qqt $file &> /dev/null
+    if (($?))
+    then
+      echo "$file - corrupt"
+      echo "deleting: $(dirname $file)"
+      sudo rm -r $(dirname $file)
+    fi
+  fi
+done

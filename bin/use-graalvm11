@@ -1,0 +1,5 @@
+#!/bin/sh
+rm $HOME/lib/java
+ln -s $HOME/lib/versions/graalvm11 $HOME/lib/java
+echo "Switched to use graalvm11"
+java -version

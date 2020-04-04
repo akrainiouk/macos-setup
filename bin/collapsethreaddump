@@ -1,0 +1,104 @@
+#!/usr/bin/awk -f
+#
+# Collapses identical stack traces so that the thread dump is easier to read.
+# This script is able to automatically detect Sun HotSpot JVM thread dumps from
+# stdout log file. If there are several thread dumps in the file they are collapsed
+# separately.
+#
+# Usage:
+#     collapsethreaddump <logfile>
+# or:
+#     cat <file> | collapsethreaddump
+#
+
+# Parses command line options
+function parse_cmd() {
+  for (i = 0; i < ARGC; i++) {
+    if (ARGV[i] ~ /^-/) {
+      option = ARGV[i];
+      ARGV[i] = "";
+      if (option ~ /^-a/) {
+        VERBOSE = 1;
+      } else if (option ~ /^-h/) {
+        usage();
+      }
+    }
+  }
+}
+
+function usage() {
+    print
+    print "Usage:"
+    print
+    print "    collapsethreaddump [-a] [-h] [<file>]"
+    print
+    print "Options:"
+    print
+    print "    -a   output all threads in the group rather then the first one only"
+    print "         normally only first thread preceided with the total thread count is printed"
+    print "    -h   print this help message and exit"
+    print
+    print "    if <file> argument is ommitted the script takes its input from stdin"
+    print
+    exit(0);
+}
+
+function printReport() {
+    print stackDumpHeader
+    for (trace in traces) {
+	print "****************************************************************************"
+	if (VERBOSE) {
+	    print traces[trace];
+	} else {
+	    print "[" threadCounts[trace] "] " traces[trace];
+	}
+	print "----------------------------------------------------------------------------"
+	print trace
+	print
+    }
+}
+
+function collectStackTrace() {
+#print NR " collecting stack trace for: " $0
+    header = $0
+#    buffer = ""
+    getline
+    buffer = $0
+    getline
+    while ($0 ~ "^[ \t]+[-a]") {
+#print NR " collecting " $0;
+	if (length(buffer) > 0) {
+	    buffer = buffer "\n";
+	}
+	buffer = buffer $0;
+	getline;
+    }
+    if (!traces[buffer]) {
+	traces[buffer] = header;
+	threadCounts[buffer] = 1;
+    } else if (VERBOSE) {
+	traces[buffer] = traces[buffer] "\n" header;
+    } else {
+	threadCounts[buffer] += 1;
+    }
+}
+
+BEGIN {
+    parse_cmd();
+}
+
+/Full thread dump/ {
+    print $0;
+    getline;
+    while (1) {
+	if ($0 ~ "^\"") {
+	    collectStackTrace();
+	} else if ($0 != "") {
+#print NR " breaking on " $0
+	    break;
+	} else {
+	  getline;
+        }
+    }
+    printReport();
+}

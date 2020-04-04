@@ -1,0 +1,2 @@
+#!/bin/sh
+sudo lsof | sed -e 's/^[^ ]*[ ]*//g' | sed -e 's/ .*$//g' | sort | uniq -c | sort -nr

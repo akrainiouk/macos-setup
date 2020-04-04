@@ -1,0 +1,22 @@
+#!/bin/bash
+
+if (( $# < 1 ))
+then
+  echo "usage: $(basename $0) <project-name>"
+  exit 1
+elif (( $# == 2 ))
+then
+  groupId=$1
+  shift 1
+else
+  groupId="com.agk.sandbox"
+fi
+
+projectName=$1
+
+mvn archetype:generate \
+	-DgroupId=$groupId \
+	-DartifactId=$projectName \
+	-DarchetypeArtifactId=maven-archetype-quickstart \
+	-DinteractiveMode=false
+

@@ -1,0 +1,9 @@
+#!/bin/sh
+# Enables key based authentication on the remote machine.
+# public and private keys must be generated using ssh_keygen command prior to executing
+# this script.
+#
+# Usage:
+#   regssh <hostname>
+#
+cat ~/bin/reg-ssh | ssh $1

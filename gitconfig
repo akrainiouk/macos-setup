@@ -1,0 +1,5 @@
+[user]
+	email = akrainio@adobe.com
+	name = Alexei Krainiouk
+[core]
+	pager = less -F -X

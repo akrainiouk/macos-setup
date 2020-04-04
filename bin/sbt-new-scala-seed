@@ -1,0 +1,8 @@
+#!/bin/bash
+if (( $# < 1 ))
+then
+  echo "usage: $(basename $0) <project-name>"
+  exit 1
+fi
+
+echo $1 | sbt new scala/scala-seed.g8

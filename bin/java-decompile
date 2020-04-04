@@ -1,0 +1,17 @@
+#!/bin/bash
+# Uses java decompiler bundled with IntelliJ IDEA.
+# Decompiler can be downloaded separately from here:
+# https://github.com/JetBrains/intellij-community/tree/master/plugins/java-decompiler/engine
+if (( $# < 1 ))
+then
+  echo "usage:"
+  echo "  $(basename $0) [-<option>=<value>]* [<class-jar-or-directory>]+ <destination-directory>"
+  echo "example:"
+  echo "   $(basename $0) -dgs=true target/classes/ archive.jar some.class /tmp/decompiled/"
+  echo "for option details see: https://github.com/JetBrains/intellij-community/tree/master/plugins/java-decompiler/engine"
+  exit 1
+fi
+java \
+  -cp /Applications/IntelliJ\ IDEA.app/Contents/plugins/java-decompiler/lib/java-decompiler.jar \
+  org.jetbrains.java.decompiler.main.decompiler.ConsoleDecompiler \
+  $@

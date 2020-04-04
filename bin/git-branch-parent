@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Tries to determine a good merge base from among all local branches.
+# Here used, a "good" merge base is the one sharing the most recent commit
+# on this branch. This function will exit 1 if no branch is found,
+# or exit 2 in a tie.
+#
+# Untested - use at your own risk.
+
+MAX_SEARCH=20   # only search the last 20 commits on this branch
+FOUND=0
+LAST_BRANCH=
+
+# iterate through the commits, most recent first
+for COMMIT in $(git rev-list --max-count=$MAX_SEARCH HEAD); do
+  # check every local branch
+  for BRANCH in $(git for-each-ref --format="%(refname)" refs/heads); do
+    echo checking branch $BRANCH for commit $COMMIT
+    # look for the commit in that branch's history
+    if (git rev-list $BRANCH | fgrep -q COMMIT); then
+      echo $BRANCH
+      FOUND=$((FOUND + 1))
+      LAST_BRANCH="$BRANCH"
+    fi
+  done
+  if [ $FOUND -gt 1 ]; then
+    # more than one choice; exit
+    exit 2
+  elif [ $FOUND -eq 1 ]; then
+    git merge $LAST_BRANCH
+    exit 0
+  fi
+done
+exit 1   # could not find a parent
