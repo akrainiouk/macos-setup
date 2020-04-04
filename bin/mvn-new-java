@@ -1,8 +1,10 @@
 #!/bin/bash
+# Generate new maven java project
+#
 
 if (( $# < 1 ))
 then
-  echo "usage: $(basename $0) <project-name>"
+  echo "usage: $(basename $0) [<groupId>] <artifactId>"
   exit 1
 elif (( $# == 2 ))
 then
@@ -12,11 +14,52 @@ else
   groupId="com.agk.sandbox"
 fi
 
-projectName=$1
+artifactId=$1
 
-mvn archetype:generate \
-	-DgroupId=$groupId \
-	-DartifactId=$projectName \
-	-DarchetypeArtifactId=maven-archetype-quickstart \
-	-DinteractiveMode=false
+if [[ -e $artifactId ]]
+then
+  echo "Target directory already exists: [$artifactId]"
+  exit 1
+fi
+
+packagePath="$(echo $groupId | sed -e 's/\./\//g')"
+srcPath=$artifactId/src/main/java/$packagePath
+
+mkdir -p $srcPath
+
+cat << EOF > $artifactId/pom.xml
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>$groupId</groupId>
+  <artifactId>$artifactId</artifactId>
+  <packaging>jar</packaging>
+  <version>1.0-SNAPSHOT</version>
+  <properties>
+    <maven.compiler.parameters>true</maven.compiler.parameters>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+  </properties>
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.9</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>
+EOF
+
+cat << EOF > $srcPath/Main.java
+package $groupId;
+
+public class Main {
+
+  public static void main(String[] args) {
+    System.out.println("Hello World");
+  }
+
+}
+EOF
 
