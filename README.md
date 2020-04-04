@@ -1,6 +1,11 @@
+# Install custom startup and helper scripts
+```bash
+./install.sh
+```
+
 # Install Homebrew
 # Install packages:
-```
+```bash
 brew install watch
 brew install coreutils
 brew install bash
@@ -17,11 +22,12 @@ brew install yq
 gem install mustache
 ```
 # Bash startup scripts.
-```
+```bash
 cp bashrc ~/.bashrc
 cp bash_profile ~/.bash_profile
 ```
 # Syntax highlighting tool
-```
+```bash
 brew install pygments
 ```
+
