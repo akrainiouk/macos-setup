@@ -30,6 +30,12 @@ srcPath=$artifactId/src/main/java/$packagePath
 mkdir -p $srcPath
 
 ##########################################
+# Initialize IntelliJ IDEA copyright notices
+##########################################
+mkdir -p $artifactId/.idea
+idea-init-copyright $artifactId
+
+##########################################
 # Generate pom.xml
 ##########################################
 

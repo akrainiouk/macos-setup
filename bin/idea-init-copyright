@@ -1,0 +1,31 @@
+#!/bin/sh
+# Initializes copyright definitions in IntelliJ IDEA project
+# Sets symbolic links to predefined copyright notices
+#
+if (( $# == 1 ))
+then
+  targetPath=$1
+else
+  targetPath="./"
+fi
+if [ ! -d "$targetPath/.idea" ]
+then
+  echo "$targetPath/.idea folder does not exist." 
+  exit 1
+fi
+
+rootDir=$(dirname $(dirname $(realpath $0)))
+dstDir=$targetPath/.idea/copyright
+mkdir -p $dstDir
+
+for srcFile in $(find $rootDir/data/idea-init-copyright -type f)
+do
+  dstFile=$dstDir/$(basename $srcFile)
+  if [[ -e $dstFile ]]
+  then
+    echo "Skippinng: $dstFile (file exists)"
+  else
+    echo "Installing: $(basename $srcFile)"
+    ln -s $srcFile $dstFile
+  fi
+done
