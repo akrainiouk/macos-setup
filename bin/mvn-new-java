@@ -1,5 +1,7 @@
 #!/bin/bash
-# Generate new maven java project
+# Generates new maven java project
+# Initializes local git respoitory and does
+# initial commit
 #
 
 if (( $# < 1 ))
@@ -27,6 +29,10 @@ srcPath=$artifactId/src/main/java/$packagePath
 
 mkdir -p $srcPath
 
+##########################################
+# Generate pom.xml
+##########################################
+
 cat << EOF > $artifactId/pom.xml
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
@@ -51,6 +57,10 @@ cat << EOF > $artifactId/pom.xml
 </project>
 EOF
 
+##########################################
+# Generate Main.java
+##########################################
+
 cat << EOF > $srcPath/Main.java
 package $groupId;
 
@@ -63,3 +73,57 @@ public class Main {
 }
 EOF
 
+##########################################
+# Generate .gitignore
+##########################################
+
+cat << EOF > $artifactId/.gitignore
+# Eclipse
+.project
+.classpath
+.settings/
+bin/
+
+# IntelliJ
+.idea
+*.ipr
+*.iml
+*.iws
+
+# NetBeans
+nb-configuration.xml
+
+# Visual Studio Code
+.vscode
+
+# OSX
+.DS_Store
+
+# Vim
+*.swp
+*.swo
+
+# patch
+*.orig
+*.rej
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+release.properties
+EOF
+
+##########################################
+# Generate README.md
+##########################################
+
+cat << EOF > $artifactId/README.md
+# $artifactId maven project
+EOF
+
+cd $artifactId
+git init
+git add .
+git commit -m "Initial commit"
