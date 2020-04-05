@@ -1,0 +1,34 @@
+#!/bin/bash
+
+self=$(realpath $0)
+dataDir=$(dirname $(dirname $self))/data/$(basename $self)
+
+if (( $# < 1 ))
+then
+  echo "Usage:"
+  echo "  $(basename $0) <license-name>"
+  echo "available licenses:"
+  for file in $(ls $dataDir)
+  do
+    echo "  $file"
+  done
+  exit 1
+fi
+license=$1
+if (( $# == 2 ))
+then
+  dstFile=$1
+else
+  dstFile=LICENSE
+fi
+
+if [[ -e LICENSE ]]
+then
+  echo "License file already exists: $dstFile"
+  exit 1
+fi
+
+cp $dataDir/$license $dstFile
+  
+  
+
