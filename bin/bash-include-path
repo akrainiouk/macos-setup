@@ -1,0 +1,7 @@
+#!/bin/bash
+# Print out path to bash utils
+case $OSTYPE in
+  darwin*) self=$(greadlink -f $0) ;;
+  *)       self=$(readlink -f $0)  ;;
+esac
+echo $(dirname $(dirname $(realpath $self)))/lib

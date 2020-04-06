@@ -31,3 +31,8 @@ cp bash_profile ~/.bash_profile
 brew install pygments
 ```
 
+# Tools for working with REST services
+```bash
+brew install httpie websocat
+```
+
