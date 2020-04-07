@@ -4,4 +4,13 @@ then
   echo "$(basename $0) <file>"
   exit 1
 fi
-src-hilite-lesspipe.sh $1 | less -R
+for source in "$@"; do
+  case $source in
+  *.yaml|*.yml)
+    pygmentize $source | less -R
+    ;;
+  *)
+    src-hilite-lesspipe.sh $1 | less -R
+    ;;
+  esac
+done
