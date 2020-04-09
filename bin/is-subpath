@@ -1,0 +1,33 @@
+#!/bin/bash
+# Check if a path or file is subpath of another path
+if (( $# != 2 ))
+then
+  echo "Usage: $(basename $0) <parent-path> <child-path>"
+  exit 1
+fi
+
+parent="$1"
+child="$2"
+if [[ ! -d "$parent" ]]
+then
+  echo "Parent must exist and be a directory: $parent"
+  exit 1
+fi
+parent=$(realpath $parent)
+if [[ -e $child ]]
+then
+  child=$(realpath $child)
+fi
+
+test $parent != "/" || exit 0    # root folder is parent of all
+
+while test "$parent" != "$child"
+do
+  child=$(dirname $child)
+  if [[ -e $child ]]
+  then
+    child=$(realpath $child)
+  fi
+  test "$child" != "/" || exit 1
+done
+exit 0

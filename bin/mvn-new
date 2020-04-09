@@ -1,0 +1,33 @@
+#!/bin/bash
+# Generates new maven java project
+# Initializes local git respoitory and does
+# initial commit
+#
+
+# shellcheck source=../lib
+source "$(bash-include-path)/common.sh"
+source "$(bash-include-path)/mustache-utils.sh"
+
+if (( $# != 2 ))
+then
+  echo "Usage: $(basename $0) <flavor> <artifact-id>"
+  echo "Avalable flavors:"
+  ls $DATA_PATH
+  error 1
+fi
+
+#! is-subpath $ROOT_PATH "." || echo "Cannot be used in $PWD folder"; exit 1
+
+if is-subpath $ROOT_PATH "."
+then
+  echo "Cannot not be used in [$PWD] folder"
+  error 1
+fi
+
+flavor="$1"
+artifactId="$2"
+templateDir=$DATA_PATH/$flavor
+
+mkdir -p $artifactId
+processTemplates $templateDir $artifactId artifact-id=$artifactId
+initGit $artifactId

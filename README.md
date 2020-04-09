@@ -8,6 +8,7 @@
 ```bash
 brew install watch
 brew install coreutils
+brew install findutils  # provides gfind
 brew install bash
 brew install bash-completion
 brew install git

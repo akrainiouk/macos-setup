@@ -58,6 +58,9 @@ error() {
   exit $exitCode
 }
 
+ROOT_PATH="$(realpath $(bash-include-path)/..)"
+DATA_PATH="$ROOT_PATH/data/$(basename $0)"
+
 # fixes readlink compatibility between macos and linux
 read_link() {
   case $OSTYPE in
@@ -70,3 +73,15 @@ read_link() {
   esac
 }
 
+initGit() {
+  path=$1
+  cd $path || exit 1
+  if [[ -e .git ]]
+  then
+    echo "Git already initialized in [$PWD]"
+    exit 1
+  fi
+  git init
+  git add .
+  git commit -m "Initial commit"
+}
