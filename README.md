@@ -1,6 +1,6 @@
-# Shared setup for macos
+# Shared setup for MacOs
 
-This project is intened to allow to easily transfer my customizations from one
+This project is intended to allow to easily transfer my customizations from one
 MacOs machine to another and keep them in sync afterwards.
 
 ## Installation
@@ -8,18 +8,25 @@ MacOs machine to another and keep them in sync afterwards.
 1. Clone the project from git
 2. Install [homebrew](https://docs.brew.sh/Installation) and its dependencies.
 3. Install homebrew packages (not all are required)
-    ```bash
-    brew install watch
-    brew install coreutils
+    ```bash                 
+    # missing or gnue flavors of popular tools
+    brew install watch      # missing in MacOs
+    brew install coreutils  # realpath, greadlink
     brew install findutils  # provides gfind
-    brew install bash
+    brew install bash       # gnue version of bash
     brew install bash-completion
-    brew install git
+   
     brew install source-highlight
-    brew install pygments  # provides syntax highliting for YAML
+    brew install pandoc    # used by md-preview script
+    brew install pygments  # provides syntax highliting for YAML  
+    brew install htop      # nice alternative to top
     # web development
     brew install httpie    # dev friendly alternative to curl
     brew install websocat  # curl for websocket protocol
+    #######################
+    # Development tools    
+    #######################
+    brew install git   
     # Kubernetes
     brew cask install docker
     brew install kubernetes-cli
@@ -29,7 +36,7 @@ MacOs machine to another and keep them in sync afterwards.
     # Mustache templating engine
     gem install mustache
     ```
-4. Confiture your startup files
+4. Configure your startup files
 ```bash
 cd <project-root>
 install.sh
