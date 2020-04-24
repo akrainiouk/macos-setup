@@ -45,6 +45,16 @@ then update .bashrc and .bash_profiles as it is at the end of the script run
 
 # Post installation adjustments
 
+## xml2json
+checkout from https://github.com/hay/xml2json.git or download directly:
+```bash
+curl -o xml2json.py https://raw.githubusercontent.com/hay/xml2json/master/xml2json.py 
+```                 
+for human readable output use:
+```
+xml2json --strip_namespace --strip_text <input-file.xml>
+```
+
 ## Intellij IDEA
 
 ### Fix autorepeat in embedded terminal ([detailed discussion](https://stackoverflow.com/questions/15107321/intellij-idea-auto-repetition-of-letter-keys))

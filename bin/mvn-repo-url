@@ -1,0 +1,20 @@
+#!/bin/bash
+# Attempts to figure out URL of the repository that is defined in settings.xml
+# and prints it
+repoIds() {
+  mvn-repos | jq --raw-output '.id'
+}
+
+if (( $# != 1 ))
+then
+  echo "Usage: $(basename $0) <repository-id>"
+  echo "Available repository ids:"
+  for repoId in $(repoIds)
+  do
+    echo "  $repoId"
+  done
+  exit 1
+fi
+
+repoId=$1
+mvn-repos | jq --raw-output "select(.id==\"$repoId\") | .url"

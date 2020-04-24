@@ -1,7 +1,12 @@
 #!/bin/bash
 # Print out path to bash utils
+# Usage: bash-include-path [ <progPath> ]
+# Optional <progPath> to a script for which to
+# derive inludes defaults to bash-include-path script itself
+#
+prog=${1:-"$0"}
 case $OSTYPE in
-  darwin*) self=$(greadlink -f $0) ;;
-  *)       self=$(readlink -f $0)  ;;
+  darwin*) self=$(greadlink -f $prog) ;;
+  *)       self=$(readlink -f $prog)  ;;
 esac
 echo $(dirname $(dirname $(realpath $self)))/lib

@@ -51,11 +51,11 @@ function traceback
 }
 
 error() {
-  local exitCode=${1:0}
+  (( $# == 0 )) || echo "$1"
   set +eu
   trap - EXIT
   trap - ERR
-  exit $exitCode
+  exit 1
 }
 
 ROOT_PATH="$(realpath $(bash-include-path)/..)"

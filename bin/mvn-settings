@@ -1,0 +1,6 @@
+#!/bin/bash
+mvn help:effective-settings \
+| sed -n '/^<settings/,$p' \
+| sed '/<\/settings>/q' \
+| xml2json --strip_text --strip_namespace \
+| jq

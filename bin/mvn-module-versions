@@ -1,0 +1,11 @@
+#!/bin/bash
+for file in *
+do
+  if [[ -e "$file/pom.xml" ]]
+  then
+#    echo "$file/pom.xml"
+    version="$(echo '${project.groupId}:${project.artifactId}:${project.version}' \
+               | mvn -f "$file/pom.xml"  help:evaluate -q -DforceStdout)"
+    echo "$version"
+  fi
+done

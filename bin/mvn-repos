@@ -1,0 +1,3 @@
+#!/bin/bash
+mvn-settings \
+| jq --compact-output '.settings.profiles | .[] | .repositories | .[] | .[] | {id, url}'
