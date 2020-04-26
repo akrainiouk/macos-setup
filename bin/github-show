@@ -14,7 +14,7 @@ remoteSpec="$(
 )"
 
 case "$remoteSpec" in
-git@git.corp.adobe.com*)
+git@*)
   hostStub="https://$(sed -e 's/^git@//g' -e 's/\.git$//g' -e 's/:/\//g' <<< "$remoteSpec")"
   ;;
 *)
