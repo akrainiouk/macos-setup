@@ -1,0 +1,25 @@
+#!/bin/bash
+
+file="${1:-""}"
+
+status="$(git status -sb)"
+remotePath="$(sed -e 's/^#.*\.\.\.//g' -e 's/^\([^/]*\)\//\1 /g' <<< $status)"
+remote="$(cut -f 1 -d ' ' <<< "$remotePath")"
+path="$(cut -f 2 -d ' ' <<< "$remotePath")"
+remoteSpec="$(
+  git remote -v \
+  | grep "$remote" \
+  | grep fetch \
+  | awk '{print $2}'
+)"
+
+case "$remoteSpec" in
+git@git.corp.adobe.com*)
+  hostStub="https://$(sed -e 's/^git@//g' -e 's/\.git$//g' -e 's/:/\//g' <<< "$remoteSpec")"
+  ;;
+*)
+  hostStub="$(sed -e 's/\.git$//g' <<< "$remoteSpec")"
+esac
+repoUrl="$hostStub/tree/$path/$file"
+open "$repoUrl"
+
