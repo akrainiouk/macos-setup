@@ -1,0 +1,49 @@
+#!/bin/bash
+
+source "$(bash-include-path)/common.sh"
+source "$(bash-include-path)/mvn-utils.sh"
+
+repoId=${1:-"artifactory-dev-releases"}
+
+error() {
+  local message="$1"
+  echo "******************************************************************" 2>&1
+  echo " ERROR: $message"                                                   2>&1
+  echo "******************************************************************" 2>&1
+  exit 1
+}
+
+setProjectVersion() {
+  mvn org.codehaus.mojo:versions-maven-plugin:2.7:set -DnewVersion="$1"
+}
+
+test -f pom.xml || error "pom.xml not found. Not a maven project"
+echo "Verifying git repo..."
+git status -s || error "aborting"
+test -z "$(git status -s)" || error "Uncommitted changes, aborting"
+
+echo "Generating dependency list..."
+depListFile="$(mktemp /tmp/deplist.XXXXXX)"
+mvn dependency:list -DoutputFile="$depListFile"
+echo "Checking for snapshot dependencies..."
+if grep '\-SNAPSHOT:' "$depListFile"
+then
+  error "Snapshot dependencies detected (see above), aborting"
+fi
+
+timeStamp="$(date -u "+T%Y%m%d%H%M")"
+artifactVersion=$(artifactVersion pom.xml)
+lastCommit=$(git log --format="%h" -n 1)
+releaseTag=$(echo "$artifactVersion" | sed -e "s/SNAPSHOT/$timeStamp-$lastCommit/g")
+
+echo "Updating project version to: [$releaseTag]"
+setProjectVersion "$releaseTag"
+repoUrl="$(mvn-repo-url $repoId)"
+
+echo "Rebuilding and deploying..."
+mvn clean install source:jar deploy -DaltDeploymentRepository="$repoId::default::$repoUrl"
+
+echo "Reverting project version to its original state"
+mvn versions:revert
+echo "All done"
+

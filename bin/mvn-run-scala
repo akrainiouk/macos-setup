@@ -1,0 +1,6 @@
+#!/bin/bash
+# Run scala REPL with the classpath derived from maven project
+tempFile="$(mktemp /tmp/mvn-run-scala-classpath-XXXXXX)"
+mvn dependency:build-classpath -Dmdep.outputFile="$tempFile"
+classPath="$(cat "$tempFile")"
+scala -classpath "$classPath"
