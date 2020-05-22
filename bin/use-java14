@@ -1,0 +1,5 @@
+#!/bin/sh
+rm $HOME/lib/java
+ln -s $HOME/lib/versions/java14 $HOME/lib/java
+echo "Switched to use java14"
+java -version

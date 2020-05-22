@@ -1,0 +1,5 @@
+#!/bin/sh
+rm $HOME/lib/java
+ln -s $HOME/lib/versions/graalee11 $HOME/lib/java
+echo "Switched to use graalee11"
+java -version
