@@ -7,4 +7,4 @@ fi
 
 path=$1
 shift 1
-find -L $path \( -name '*.java' -o -name '*.scala' -o -name '*.yaml' -o -name '*.json' -o -name '*.xml' \) -exec grep -H $@ {} \;
+find -L $path \( -name '*.java' -o -name '*.scala' -o -name '*.yaml' -o -name '*.json' -o -name '*.xml' -o -name '*.js' \) -exec grep -H $@ {} \;

@@ -1,0 +1,6 @@
+#!/usr/local/bin/jq --raw-input --compact-output -f
+# Converts '=' separated list of key value pairs into a stream of json objects
+# like this:
+# { "key": "<key>", "value": "<value>" }
+# for example can be used to convert a list of environment variables into json
+capture("(?<key>[^=]+)=(?<value>.*)")

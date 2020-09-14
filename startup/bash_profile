@@ -11,6 +11,10 @@ fi
 export LESS="R"
 # export LESSOPEN="| src-hilite-lesspipe.sh %s"
 
+# Prevent duplicates and commands starting with space
+# from being stored into bash history list
+export HISTCONTROL=ignoreboth
+
 # Enable bash completion
 if [ -f $(brew --prefix)/etc/profile.d/bash_completion.sh ]
 then

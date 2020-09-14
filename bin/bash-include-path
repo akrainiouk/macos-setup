@@ -2,7 +2,7 @@
 # Print out path to bash utils
 # Usage: bash-include-path [ <progPath> ]
 # Optional <progPath> to a script for which to
-# derive inludes defaults to bash-include-path script itself
+# derive includes defaults to bash-include-path script itself
 #
 prog=${1:-"$0"}
 case $OSTYPE in
