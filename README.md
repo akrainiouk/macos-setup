@@ -68,3 +68,14 @@ defaults write -g ApplePressAndHoldEnabled -bool false
 2. Under services find "Search man Page index in Terminal" and uncheck it.
 3. While you are at it you can also disable "Open man Page in Terminal" near it to fix
 "Move lines to another changelist" action in IDEA
+
+## Features
+
+### Project specific bash profiles
+
+if *bash_profile* file is placed in the directory where new bash instance is starting
+provided bashrc will execute it and change command prompt to mark that bash is running
+in customized mode. *user@host* part of the prompt is replaced with either the
+value of *PROJECT_NAME* environment variable or a name of a parent directory highlighted
+in red. This feature allows automatically customize terminal instances running
+inside IntelliJ IDEA.
