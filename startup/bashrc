@@ -36,5 +36,5 @@ if [[ -f "$PWD/bash_profile" ]]
 then
   source "$PWD/bash_profile"
   prj="${PROJECT_NAME:-$(basename "$PWD")}"
-  export PS1="[\W \e[1;31m$prj\e[m]$ "
+  export PS1="[\e[1;31m$prj\e[m \W]$ "
 fi
