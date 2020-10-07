@@ -2,7 +2,7 @@
 # Allowing to include other library scripts (from lib directory)
 # as well as basic support for error reporting
 
-if [[ ! -v SHELLBOOST ]]
+if [[ "${SHELLBOOST}" == "" ]]
 then
 
   export SHELLBOOST=1
