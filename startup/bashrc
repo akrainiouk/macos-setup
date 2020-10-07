@@ -32,9 +32,9 @@ then
   done
 fi
 
-if [[ -f "$PWD/project_bashrc" ]]
+if [[ -f "$PWD/projectrc.sh" ]]
 then
-  source "$PWD/project_bashrc"
+  source "$PWD/projectrc.sh"
   prj="${PROJECT_NAME:-$(basename "$PWD")}"
   export PS1="[\e[1;31m$prj\e[m \W]$ "
 fi
