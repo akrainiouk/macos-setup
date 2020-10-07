@@ -64,6 +64,14 @@ defaults write -g ApplePressAndHoldEnabled -bool false
 
 ### Fix find action (Command-Shift-A) shortcut
 
+#### Enable three finger gragging
+1. Open System *Preferences*/*Accessibility*/*Pointer* Control
+2. Click *Trackpad Options*
+3. Check *Enable dragging* checkbox choosing *three finger drag* in the dropdown list next to it.
+#### Enable *Tap to click*
+1. Open *System Preferences*/*Trackpad*
+2. Check *Tap to click* checkbox.
+#### Fix conflicting/annoying keyboard shortcuts.
 1. Open system Preferences/Keyboard/Shortcuts
 2. Under services find "Search man Page index in Terminal" and uncheck it.
 3. While you are at it you can also disable "Open man Page in Terminal" near it to fix
