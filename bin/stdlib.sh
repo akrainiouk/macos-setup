@@ -10,15 +10,45 @@ then
   export STD_LIB="$(dirname "$(dirname "$(realpath "${BASH_SOURCE[0]}")")")/lib"
   export SELF_DIR="$(dirname "$(realpath "${BASH_SOURCE[1]}")")"
 
+  traceback() {
+    # Hide the traceback() call.
+    local -i start=$(( ${1:-0} + 1 ))
+    local -i end=${#BASH_SOURCE[@]}
+    local -i i=0
+    local -i j=0
+    local func file line
+    for ((i=start; i < end; i++))
+    do
+      j=$(( i - 1 ))
+      func="${FUNCNAME[$i]}"
+      file="$(realpath "${BASH_SOURCE[$i]}")" || file="${BASH_SOURCE[$i]}"
+      line="${BASH_LINENO[$j]}"
+      echo "    at ${func}(${file}:${line})" 1>&2
+    done
+  }
+
   error() {
-    echo "Error: $*" 2>&1
+    echo "ERROR: $*" 1>&2
     traceback 1
     return 1
   }
 
   die() {
-    error "$1"
+    echo "ERROR: $*" 1>&2
+    traceback 1
     exit 1
+  }
+
+  trace() {
+    echo "TRACE: $*" 1>&2
+  }
+
+  intercept() {
+    while read line
+    do
+      echo "INTERCEPT: $line" 1>&2
+      echo $line
+    done
   }
 
   callerPath() {
@@ -29,23 +59,6 @@ then
   callerDir() {
     local level=$(( ${1:-0} - 1 ))
     dirname "$(callerPath $level)"
-  }
-
-  traceback() {
-    # Hide the traceback() call.
-    local -i start=$(( ${1:-0} + 1 ))
-    local -i end=${#BASH_SOURCE[@]}
-    local -i i=0
-    local -i j=0
-  
-    for ((i=start; i < end; i++))
-    do
-      j=$(( i - 1 ))
-      local function="${FUNCNAME[$i]}"
-      local file="${BASH_SOURCE[$i]}"
-      local line="${BASH_LINENO[$j]}"
-      echo "    at ${function}(${file}:${line})" 1>&2
-    done
   }
 
   callerSource() {

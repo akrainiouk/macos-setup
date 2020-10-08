@@ -36,5 +36,5 @@ if [[ -f "$PWD/projectrc.sh" ]]
 then
   source "$PWD/projectrc.sh"
   prj="${PROJECT_NAME:-$(basename "$PWD")}"
-  export PS1="[\e[1;31m$prj\e[m \W]$ "
+  export PS1="[$prj \W]($) "
 fi
