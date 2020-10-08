@@ -1,5 +1,6 @@
 # Shared setup for MacOs
 
+
 This project is intended to allow to easily transfer my customizations from one
 MacOs machine to another and keep them in sync afterwards.
 
