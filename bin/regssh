@@ -6,4 +6,6 @@
 # Usage:
 #   regssh <hostname>
 #
-cat ~/bin/reg-ssh | ssh $1
+
+echo "Use ssh-copy-id <user@host> instead" 1>&2
+exit 1
