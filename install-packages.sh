@@ -43,7 +43,12 @@ brew install websocat  # curl for websocket protocol
 # Development tools    
 #######################
 brew install java scala maven sbt
+brew cask install oracle-jdk
 # Kubernetes
+brew cask install slack
+brew cask install onedrive
+brew cask install bluejeans
+brew cask install firefox
 brew cask install docker
 brew cask install intellij-idea
 brew install kubernetes-cli
