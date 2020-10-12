@@ -54,7 +54,7 @@ brew cask install intellij-idea
 brew install kubernetes-cli
 brew install kubernetes-helm
 # Yaml query
-brew install yq
+brew install jq yq
 brew install keepassxc
 # Mustache templating engine
 sudo gem install mustache
