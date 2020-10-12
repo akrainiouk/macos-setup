@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+source stdlib.sh
+if (( $# != 2 ))
+then
+  echo "Usage: $(basename $0) <left-file> <right-file>"
+  exit 1
+fi
+idea='/Applications/IntelliJ IDEA.app/Contents/MacOS/idea'
+left="$(realpath "$1")"
+right="$(realpath "$2")"
+"$idea" diff $left $right
