@@ -53,7 +53,7 @@ installSymlink() {
   ln -s "$src" "$HOME/$dst"
 }
 
-echo "Installing symlinks to startup scripts..."
+echo "Installing symlinks to configuration files..."
 for file in $(gfind $sourcePath/config -type f -printf "%P\n")
 do
   # shellcheck disable=SC2088
