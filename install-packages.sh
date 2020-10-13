@@ -31,6 +31,8 @@ brew install coreutils  # realpath, greadlink
 brew install findutils  # provides gfind
 brew install bash       # gnue version of bash
 brew install bash-completion
+brew install dos2unix
+brew install jq yq
 
 brew install source-highlight
 brew install pandoc    # used by md-preview script
@@ -54,7 +56,6 @@ brew cask install intellij-idea
 brew install kubernetes-cli
 brew install kubernetes-helm
 # Yaml query
-brew install jq yq
 brew install keepassxc
 # Mustache templating engine
 sudo gem install mustache
