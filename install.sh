@@ -61,6 +61,9 @@ do
   installSymlink "$targetRef/config/$file" ".$file"
 done
 
+echo "Fixing autorepeat in Intellij IDEA terminal simulator."
+defaults write -g ApplePressAndHoldEnabled -bool false
+
 echo "
 Installation complete. Add the following lines to your startup
 scripts right before any exiting customizations:

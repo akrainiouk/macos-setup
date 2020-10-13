@@ -62,6 +62,7 @@ xml2json --strip_namespace --strip_text <input-file.xml>
 ```bash                                                                   
 defaults write -g ApplePressAndHoldEnabled -bool false
 ```                                   
+Restart Intellij IDEA in order for the fix to take effect
 
 ### Fix find action (Command-Shift-A) shortcut
 

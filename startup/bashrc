@@ -36,5 +36,10 @@ if [[ -f "$PWD/projectrc.sh" ]]
 then
   source "$PWD/projectrc.sh"
   prj="${PROJECT_NAME:-$(basename "$PWD")}"
-  export PS1="[$prj \W]($) "
+  if [[ "$TERMINAL_EMULATOR" == "JetBrains-JediTerm" ]]
+  then
+    export PS1="[$prj \W]($) "
+  else
+    export PS1="[\e[1;31m$prj\e[m \W]$ "
+  fi
 fi
