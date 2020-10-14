@@ -2,13 +2,17 @@
 # Allowing to include other library scripts (from lib directory)
 # as well as basic support for error reporting
 
-if [[ "${SHELLBOOST}" == "" ]]
+if [ "${BASH_VERSINFO:-0}" -lt 5 ]
 then
+  echo "ERROR: Insufficient bash version in $(basename "$0"): [$BASH_VERSION]. Version >= 5 required." 1>&2
+  echo "       MacOs note: consider using [#!/usr/bin/env bash] instead of [#!/bin/bash]"
+  exit 1
+fi
 
-  export SHELLBOOST=1
-
-  export STD_LIB="$(dirname "$(dirname "$(realpath "${BASH_SOURCE[0]}")")")/lib"
-  export SELF_DIR="$(dirname "$(realpath "${BASH_SOURCE[1]}")")"
+if [[ "${STD_LIB}" == "" ]]
+then
+  STD_LIB="$(dirname "$(dirname "$(realpath "${BASH_SOURCE[0]}")")")/lib"
+  SELF_DIR="$(dirname "$(realpath "${BASH_SOURCE[1]}")")"
 
   traceback() {
     # Hide the traceback() call.
@@ -82,7 +86,7 @@ then
   include() {
     (( $# == 1 )) || error "Missing argument: <file-name>"
     local includeFile
-    local includeFile="$(callerDir 1)/$1"
+    includeFile="$(callerDir 1)/$1"
     if [[ -f "$includeFile" ]]
     then
       source "$includeFile"
