@@ -3,5 +3,5 @@
 	name = Alexei Krainiouk
 [core]
 	pager = less -F -X
-[pu ""]
+[pull]
 	rebase = true
