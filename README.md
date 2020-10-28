@@ -64,6 +64,15 @@ defaults write -g ApplePressAndHoldEnabled -bool false
 ```                                   
 Restart Intellij IDEA in order for the fix to take effect
 
+### Configure Groovy SDK
+assuming groovy sdk is previously installed via:
+```
+brew install groovysdk
+```
+When prompted (e.g. on opening Jenkins file) choose
+`/usr/local/Cellar/groovysdk/<version>/libexec` as library root directory
+(Use `Command-Shift-G` in finder to copy/paste path)
+
 ### Fix find action (Command-Shift-A) shortcut
 
 #### Enable three finger gragging

@@ -44,7 +44,7 @@ brew install websocat  # curl for websocket protocol
 #######################
 # Development tools    
 #######################
-brew install java scala maven sbt
+brew install java scala groovysdk maven sbt
 brew cask install oracle-jdk
 # Kubernetes
 brew cask install slack
