@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+if (( $# != 1 ))
+then
+  echo "Usage: $(basename "$0") <hostname>"
+  exit 1
+fi
+response="$(host "$1")"
+addressPat=' has address '
+domainPat=' domain name pointer '
+if (( $? ))
+then
+  echo "$response"
+  exit 1
+fi
+
+if [[ "$response" =~ $addressPat ]]
+then
+  ipAddr=$(sed -e 's/.* has address //g' <<< "$response")
+  echo "$ipAddr"
+elif [[ "$response" =~ $domainPat ]]
+then
+  hostNames="$(sed -e 's/.* domain name pointer //g' -e 's/\.$//g' <<< "$response")"
+  jq --raw-input --slurp 'split("\n") | map(select(. != ""))' <<< "$hostNames"
+else
+  echo "Unexpected response:"
+  echo "$response"
+  exit 1
+fi
