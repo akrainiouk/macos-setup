@@ -88,6 +88,7 @@ then
     fi
   }
 
+  # Runs specified script resolving its name relative to the caller path
   run() {
     (( $# >= 1 )) || error "Missing argument(s): <script> [ <args>... ]"
     local script
