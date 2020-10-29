@@ -2,13 +2,6 @@
 # Allowing to include other library scripts (from lib directory)
 # as well as basic support for error reporting
 
-if [ "${BASH_VERSINFO:-0}" -lt 5 ]
-then
-  echo "ERROR: Insufficient bash version in $(basename "$0"): [$BASH_VERSION]. Version >= 5 required." 1>&2
-  echo "       MacOs note: consider using [#!/usr/bin/env bash] instead of [#!/bin/bash]"
-  exit 1
-fi
-
 if [[ "${STD_LIB}" == "" ]]
 then
   STD_LIB="$(dirname "$(dirname "$(realpath "${BASH_SOURCE[0]}")")")/lib"
@@ -94,6 +87,22 @@ then
       error "File not found '$includeFile'"
     fi
   }
+
+  run() {
+    (( $# >= 1 )) || error "Missing argument(s): <script> [ <args>... ]"
+    local script
+    script="$(callerDir 1)/$1"
+    shift
+    $script "$@"
+  }
+
+  if [ "${BASH_VERSINFO:-0}" -lt 5 ]
+  then
+    echo "ERROR: Insufficient bash version in $(basename "$0"): [$BASH_VERSION]. Version >= 5 required." 1>&2
+    echo "       MacOs hint: consider using [#!/usr/bin/env bash] instead of [#!/bin/bash]"
+    traceback 1
+    exit 1
+  fi
 
 fi
 
