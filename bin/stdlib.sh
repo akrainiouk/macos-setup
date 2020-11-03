@@ -7,6 +7,10 @@ then
   STD_LIB="$(dirname "$(dirname "$(realpath "${BASH_SOURCE[0]}")")")/lib"
   SELF_DIR="$(dirname "$(realpath "${BASH_SOURCE[1]}")")"
 
+  log() {
+    echo "$*" 1>&2
+  }
+
   traceback() {
     # Hide the traceback() call.
     local -i start=$(( ${1:-0} + 1 ))
@@ -20,30 +24,30 @@ then
       func="${FUNCNAME[$i]}"
       file="$(realpath "${BASH_SOURCE[$i]}")" || file="${BASH_SOURCE[$i]}"
       line="${BASH_LINENO[$j]}"
-      echo "    at ${func}(${file}:${line})" 1>&2
+      log "    at ${func}(${file}:${line})"
     done
   }
 
   error() {
-    echo "ERROR: $*" 1>&2
+    log "ERROR: $*"
     traceback 1
     return 1
   }
 
   die() {
-    echo "ERROR: $*" 1>&2
+    log "ERROR: $*"
     traceback 1
     exit 1
   }
 
   trace() {
-    echo "TRACE: $*" 1>&2
+    log "TRACE: $*"
   }
 
   intercept() {
     while read line
     do
-      echo "INTERCEPT: $line" 1>&2
+      log "INTERCEPT: $line"
       echo $line
     done
   }
@@ -99,8 +103,8 @@ then
 
   if [ "${BASH_VERSINFO:-0}" -lt 5 ]
   then
-    echo "ERROR: Insufficient bash version in $(basename "$0"): [$BASH_VERSION]. Version >= 5 required." 1>&2
-    echo "       MacOs hint: consider using [#!/usr/bin/env bash] instead of [#!/bin/bash]"
+    log "ERROR: Insufficient bash version in $(basename "$0"): [$BASH_VERSION]. Version >= 5 required."
+    log "       MacOs hint: consider using [#!/usr/bin/env bash] instead of [#!/bin/bash]"
     traceback 1
     exit 1
   fi
