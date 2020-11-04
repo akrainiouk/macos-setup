@@ -11,8 +11,38 @@ then
     echo "$*" 1>&2
   }
 
+  # Prints out usage message and exits
+  # The caller has to supply command artuments but the caller name is
+  # derived automatically.
+  usage() {
+    echo "Usage: $(basename "$(callerPath)") $*"
+    exit 1
+  }
+
+  # Compares semantic versions making sure <actual-version>
+  # is greater or equal <expected-version>
+  # Semantic version components expected to be integers separated
+  # by '.' character
+  ensureMinVersion() {
+    (( $# == 2 )) || usage "<expected-version> <actual-version>"
+    local expected actual
+    expected="$(sed -e 's/\./,/g' <<< "[$1]")"
+    actual="$(sed -e 's/\./,/g' <<< "[$2]")"
+    jq --null-input \
+       --argjson expected "$expected" \
+       --argjson actual "$actual" \
+      '
+        if $actual >= $expected then
+          null | halt_error(0)
+        else
+          null | halt_error(1)
+        end
+      '
+  }
+
+  # Prints out a call stack trace to stderr
   traceback() {
-    # Hide the traceback() call.
+    # Hide the traceback() call itself.
     local -i start=$(( ${1:-0} + 1 ))
     local -i end=${#BASH_SOURCE[@]}
     local -i i=0
@@ -66,9 +96,9 @@ then
     local level, frame, line, func, path
     level=$(( ${1:-0} - 1 ))
     frame="$(caller $level)"
-    line="$(cut -d ' ' -f 1 <<< "$stackFrame")"
-    func="$(cut -d ' ' -f 2 <<< "$stackFrame")"
-    path="$(sed -e 's/[^ ]* [^ ]* //g' <<< $stackFrame)"
+    line="$(cut -d ' ' -f 1 <<< "$frame")"
+    func="$(cut -d ' ' -f 2 <<< "$frame")"
+    path="$(sed -e 's/[^ ]* [^ ]* //g' <<< $frame)"
     echo "  at $func($path:$line)"
   }
 
