@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source stdlib.sh
+
 KEYCHAIN="my-key-chain"
 
 main () {
@@ -9,6 +11,8 @@ main () {
 
   case "$1" in
     init) init_key_chain ;;
+    unlock) unlock_keychain;;
+    lock) lock_keychain;;
     ls) list_secrets ;;
     get) get_secret "$2" ;;
     set) set_secret "$2" "$3" ;;
@@ -22,6 +26,14 @@ init_key_chain() {
   security set-keychain-settings -u -t 60 "$KEYCHAIN"
 }
 
+unlock_keychain() {
+  security -i unlock-keychain my-key-chain
+}
+
+lock_keychain() {
+  security lock-keychain my-key-chain
+}
+
 list_secrets() {
   security dump-keychain "$KEYCHAIN" | grep 0x00000007 | awk -F= '{print $2}' | tr -d \"
 }
@@ -30,7 +42,7 @@ get_secret() {
   if [[ -z "$1" ]]; then
     print_usage
   fi
-  security find-generic-password -a $USER -s "$1" -w "$KEYCHAIN"
+  security find-generic-password -a $USER -s "$1" -w "$KEYCHAIN" || die "Keychain is locked. Use '$(basename "$0") unlock' to unlock"
 }
 
 set_secret() {
@@ -50,11 +62,13 @@ delete_secret() {
 print_usage() {
   cat << EOF
 Usage:
-  sec init
-  sec set <name> <value>
-  sec get <name>
-  sec rm <name>
-  sec ls
+  sec init                 - initialize keychain
+  sec unlock               - unlock keychain from remote shell
+  sec lock                 - lock keychain
+  sec set <name> <value>   - set secret value
+  sec get <name>           - get secret value
+  sec rm <name>            - remove secret value
+  sec ls                   - list secrets
 EOF
   exit 0
 }

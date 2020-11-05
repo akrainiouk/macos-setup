@@ -12,10 +12,19 @@ then
   }
 
   # Prints out usage message and exits
-  # The caller has to supply command artuments but the caller name is
+  # The caller has to supply command arguments but the caller name is
   # derived automatically.
+  # Usage:
+  # usage <arg-list> [ <comment-line>... ]
   usage() {
-    echo "Usage: $(basename "$(callerPath)") $*"
+    (( $# >= 1 )) || die "Missing argument <arg-list>"
+    local arglist="$1"
+    shift
+    echo "Usage: $(basename "$(callerPath)") $arglist"
+    for line in "$@"
+    do
+      echo "$line"
+    done
     exit 1
   }
 
