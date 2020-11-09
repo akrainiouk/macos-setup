@@ -1,0 +1,14 @@
+#!/usr/bin/env jq -f
+
+if $ARGS.named["values"] then
+  $values as $toSkip
+else
+  [ null, [], {} ] as $toSkip
+end
+| walk(
+  if type == "object" then
+    with_entries(.value as $v | select($toSkip | indices([$v]) == []))
+  else
+    .
+  end
+)

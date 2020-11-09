@@ -8,24 +8,10 @@ then
   SELF_DIR="$(dirname "$(realpath "${BASH_SOURCE[1]}")")"
 
   log() {
-    echo "$*" 1>&2
-  }
-
-  # Prints out usage message and exits
-  # The caller has to supply command arguments but the caller name is
-  # derived automatically.
-  # Usage:
-  # usage <arg-list> [ <comment-line>... ]
-  usage() {
-    (( $# >= 1 )) || die "Missing argument <arg-list>"
-    local arglist="$1"
-    shift
-    echo "Usage: $(basename "$(callerPath)") $arglist"
     for line in "$@"
     do
-      echo "$line"
+      echo "$line" 1>&2
     done
-    exit 1
   }
 
   # Compares semantic versions making sure <actual-version>
@@ -49,40 +35,58 @@ then
       '
   }
 
+  # Prints out caller source reference formatted in such a way
+  # that frames can be navigated in Intellij IDEA
+  # Usage: callerSource [ <level> ]
+  callerSource() {
+    local -i level
+    local frame line func path
+    level=$(( ${1:-1} - 1 ))
+    frame="$(caller $level)"
+    line="$(cut -d ' ' -f 1 <<< "$frame")"
+    func="$(cut -d ' ' -f 2 <<< "$frame")"
+    path="$(sed -e 's/[^ ]* [^ ]* //g' <<< $frame)"
+    echo "  at $func($path:$line)"
+  }
+
   # Prints out a call stack trace to stderr
   traceback() {
+    log "Call stack:"
     # Hide the traceback() call itself.
     local -i start=$(( ${1:-0} + 1 ))
     local -i end=${#BASH_SOURCE[@]}
     local -i i=0
-    local -i j=0
-    local func file line
     for ((i=start; i < end; i++))
     do
-      j=$(( i - 1 ))
-      func="${FUNCNAME[$i]}"
-      file="$(realpath "${BASH_SOURCE[$i]}")" || file="${BASH_SOURCE[$i]}"
-      line="${BASH_LINENO[$j]}"
-      log "    at ${func}(${file}:${line})"
+      callerSource $(( i + 1 ))
     done
   }
 
   error() {
-    log "ERROR: $*"
+    local firstLine="ERROR: $1"
+    shift
+    log "$firstLine" "$@"
     traceback 1
     return 1
   }
 
   die() {
-    log "ERROR: $*"
+    local firstLine="ERROR: $1"
+    shift
+    log "$firstLine" "$@"
     traceback 1
     exit 1
   }
 
   trace() {
-    log "TRACE: $*"
+    for line in "$@"
+    do
+      log "TRACE: $line"
+    done
   }
 
+  # Pipes its stdin into stdout intercepting each line
+  # and logging it into stderr with "INTERCEPT: " prefix.
   intercept() {
     while read line
     do
@@ -91,24 +95,35 @@ then
     done
   }
 
+  # Prints out caller script path
+  # Usage: callerPath [ <level> ]
   callerPath() {
     local level=$(( ${1:-0} - 1 ))
     realpath "${BASH_SOURCE[$level]}"
   }
 
+  # Prints out caller script directory
+  # Usage: callerDir [ <level> ]
   callerDir() {
     local level=$(( ${1:-0} - 1 ))
     dirname "$(callerPath $level)"
   }
 
-  callerSource() {
-    local level, frame, line, func, path
-    level=$(( ${1:-0} - 1 ))
-    frame="$(caller $level)"
-    line="$(cut -d ' ' -f 1 <<< "$frame")"
-    func="$(cut -d ' ' -f 2 <<< "$frame")"
-    path="$(sed -e 's/[^ ]* [^ ]* //g' <<< $frame)"
-    echo "  at $func($path:$line)"
+  # Prints out usage message and exits
+  # The caller has to supply command arguments but the caller name is
+  # derived automatically.
+  # Usage:
+  # usage <arg-list> [ <comment-line>... ]
+  usage() {
+    (( $# >= 1 )) || die "Missing argument <arg-list>"
+    local arglist="$1"
+    shift
+    echo "Usage: $(basename "$(callerPath)") $arglist"
+    for line in "$@"
+    do
+      echo "$line"
+    done
+    exit 1
   }
 
   # Include (source) bash script from standard lib location
@@ -118,7 +133,7 @@ then
     source "$includeFile"
   }
 
-  # Include (source) bash script with path relative to calling script itsef.
+  # Include (source) bash script with path relative to calling script itself.
   include() {
     (( $# == 1 )) || error "Missing argument: <file-name>"
     local includeFile
@@ -131,7 +146,9 @@ then
     fi
   }
 
-  # Runs specified script resolving its name relative to the caller path
+  # Runs specified script resolving its name relative to the caller script
+  # directory.
+  # Usage: run <command> [ <args>... ]
   run() {
     (( $# >= 1 )) || error "Missing argument(s): <script> [ <args>... ]"
     local script
