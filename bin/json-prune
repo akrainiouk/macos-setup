@@ -1,10 +1,10 @@
 #!/usr/bin/env jq -f
+# Removes null values, empty arrays and empty objects from json data.
+# Usage:
+#   json-prune [ --argjson values <json-array> ] [ <jq-args> ] [ <input-file> ]
 
-if $ARGS.named["values"] then
-  $values as $toSkip
-else
-  [ null, [], {} ] as $toSkip
-end
+
+(if $ARGS.named["values"] then $ARGS.named["values"] else [ null, [], {} ] end) as $toSkip
 | walk(
   if type == "object" then
     with_entries(.value as $v | select($toSkip | indices([$v]) == []))
