@@ -41,17 +41,16 @@ then
   callerSource() {
     local -i level
     local frame line func path
-    level=$(( ${1:-1} - 1 ))
-    frame="$(caller $level)"
-    line="$(cut -d ' ' -f 1 <<< "$frame")"
-    func="$(cut -d ' ' -f 2 <<< "$frame")"
-    path="$(sed -e 's/[^ ]* [^ ]* //g' <<< $frame)"
-    echo "  at $func($path:$line)"
+    level=$(( ${1:-1} ))
+    func="${FUNCNAME[$level]}"
+    file="$(realpath "${BASH_SOURCE[$level]}")" || file="${BASH_SOURCE[$level]}"
+    line="${BASH_LINENO[(( $level - 1 ))]}"
+    echo "    at $func($file:$line)"
   }
 
   # Prints out a call stack trace to stderr
   traceback() {
-    log "Call stack:"
+    echo "Call stack:"
     # Hide the traceback() call itself.
     local -i start=$(( ${1:-0} + 1 ))
     local -i end=${#BASH_SOURCE[@]}
@@ -66,7 +65,7 @@ then
     local firstLine="ERROR: $1"
     shift
     log "$firstLine" "$@"
-    traceback 1
+    log "$(traceback 1)"
     return 1
   }
 
@@ -74,7 +73,7 @@ then
     local firstLine="ERROR: $1"
     shift
     log "$firstLine" "$@"
-    traceback 1
+    log "$(traceback 1)"
     exit 1
   }
 
