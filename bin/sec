@@ -3,6 +3,9 @@
 source stdlib.sh
 
 KEYCHAIN="my-key-chain"
+# Return codes:
+KEYCHAIN_LOCKED=36
+KEY_NOT_FOUND=44
 
 main () {
   if [[ -z "$1" ]]; then
@@ -10,15 +13,26 @@ main () {
   fi
 
   case "$1" in
-    init) init_key_chain ;;
-    unlock) unlock_keychain;;
-    lock) lock_keychain;;
-    ls) list_secrets ;;
-    get) get_secret "$2" ;;
-    set) set_secret "$2" "$3" ;;
-    rm) delete_secret "$2" ;;
-    *) print_usage ;;
+    init)   cmd=init_key_chain ;;
+    unlock) cmd=unlock_keychain;;
+    lock)   cmd=lock_keychain;;
+    ls)     cmd=list_secrets ;;
+    get)    cmd=get_secret;;
+    set)    cmd=set_secret;;
+    rm)     cmd=delete_secret;;
+    rename) cmd=rename_secret;;
+    *)      cmd=print_usage ;;
   esac
+  shift
+  $cmd "$@"
+  returnCode="$?"
+  case $returnCode in
+  $KEYCHAIN_LOCKED) die "Keychain is locked (code $returnCode). Use '$(basename "$0") unlock' to unlock";;
+  $KEY_NOT_FOUND)   die "Key not found (code $returnCode): '$2'";;
+  0);;
+  *) die "Error (code $returnCode)"
+  esac
+
 }
 
 init_key_chain() {
@@ -42,7 +56,7 @@ get_secret() {
   if [[ -z "$1" ]]; then
     print_usage
   fi
-  security find-generic-password -a $USER -s "$1" -w "$KEYCHAIN" || die "Keychain is locked. Use '$(basename "$0") unlock' to unlock"
+  security find-generic-password -a $USER -s "$1" -w "$KEYCHAIN"
 }
 
 set_secret() {
@@ -50,6 +64,13 @@ set_secret() {
     print_usage
   fi
   security add-generic-password -D secret -U -a $USER -s "$1" -w "$2" "$KEYCHAIN"
+}
+
+rename_secret() {
+  (( $# == 2 )) || print_usage
+  secret="$(get_secret "$1")"
+  set_secret "$2" "$secret" || die "Failed to create new secret '$2'"
+  delete_secret "$1"
 }
 
 delete_secret() {
@@ -62,13 +83,14 @@ delete_secret() {
 print_usage() {
   cat << EOF
 Usage:
-  sec init                 - initialize keychain
-  sec unlock               - unlock keychain from remote shell
-  sec lock                 - lock keychain
-  sec set <name> <value>   - set secret value
-  sec get <name>           - get secret value
-  sec rm <name>            - remove secret value
-  sec ls                   - list secrets
+  sec init                         - initialize keychain
+  sec unlock                       - unlock keychain from remote shell
+  sec lock                         - lock keychain
+  sec set <name> <value>           - set secret value
+  sec get <name>                   - get secret value
+  sec rename <old-name> <new-name> - rename secret
+  sec rm <name>                    - remove secret value
+  sec ls                           - list secrets
 EOF
   exit 0
 }

@@ -153,6 +153,7 @@ then
     local script
     script="$(callerDir 1)/$1"
     shift
+    [[ -f "$script" ]] || die "Script not found: '$script'"
     $script "$@"
   }
 
