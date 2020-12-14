@@ -1,0 +1,16 @@
+source stdlib.sh
+
+(( $# >= 2 )) || { usage "<search-root-dir> <condition> [ <projection> ]"; exit 1; }
+
+searchRoot="$1"
+condition="$2"
+projection="${3:-\$file}"
+
+find "$searchRoot" -name '*.yaml' -or -name '*.json' | \
+while read file
+do
+  yq read "$file" --tojson | \
+  jq --compact-output \
+     --arg file "$file" \
+     "select($condition) | $projection"
+done
