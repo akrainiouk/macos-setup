@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+source stdlib.sh
+
+(( $# > 0 )) || usage "[ <curl-options>... ] <url>" "prints HTTP response information in JSON format"
+
+contentFile="$(mktemp)"
+stdErr="$(curl --dump-header - --output "$contentFile" --silent --show-error "$@" 2>&1)" || die "$stdErr"
+
+contentLength="$(wc -c "$contentFile" | sed -Ee 's/^ *([^ ]+).*$/\1/g')"
+contentHash="$(md5sum "$contentFile"  | sed -Ee 's/^ *([^ ]+).*$/\1/g')"
+
+headerDump="$(dos2unix <<< "$stdErr")"
+responseCode="$(head -n 1 <<< "$headerDump" | cut -f 2 -d ' ')"
+headers="$(tail -n +2 <<< "$headerDump" | yq read - --tojson)"
+
+jq --argjson code          "$responseCode" \
+   --argjson contentLength "$contentLength" \
+   --arg     contentHash   "$contentHash" \
+   '{ code: $code, content: { length: $contentLength, hash: $contentHash }, headers: . }' \
+   <<< "$headers"
+
+rm "$contentFile"
