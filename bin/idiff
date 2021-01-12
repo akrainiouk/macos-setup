@@ -1,11 +1,26 @@
 #!/usr/bin/env bash
+# shows differences between two files
+# in remote or headless shell just runs diff command
+# when UI is available uses idiff provided by intellij idea
+
 source stdlib.sh
-if (( $# != 2 ))
-then
-  echo "Usage: $(basename $0) <left-file> <right-file>"
-  exit 1
-fi
+
+(( $# == 2 )) || usage "<left-file> <right-file>"
+leftFile="$1"
+rightFile="$2"
+[[ -f "$leftFile" ]] || die "File does not exist '$leftFile'"
+[[ -f "$rightFile" ]] || die "File does not exist '$rightFile'"
+
 idea='/Applications/IntelliJ IDEA.app/Contents/MacOS/idea'
-left="$(realpath "$1")"
-right="$(realpath "$2")"
-"$idea" diff $left $right
+
+if diff -q "$leftFile" "$rightFile"
+then
+  echo "Files are identical"
+elif ! isRemoteShell && [[ -f "$idea" ]]
+then
+  # Idea tends not to return in time so run in the background
+  "$idea" diff $leftFile $rightFile &
+else
+  diff "$leftFile" "$rightFile"
+fi
+

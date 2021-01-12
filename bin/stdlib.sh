@@ -35,6 +35,10 @@ then
       '
   }
 
+  isRemoteShell() {
+    [[ "$(who am i )" =~ \([-a-zA-Z0-9\.:]+\)$ ]]
+  }
+
   # Prints out caller source reference formatted in such a way
   # that frames can be navigated in Intellij IDEA
   # Usage: callerSource [ <level> ]
@@ -70,9 +74,12 @@ then
   }
 
   die() {
-    local firstLine="ERROR: $1"
-    shift
-    log "$firstLine" "$@"
+    if (( $# > 0 ))
+    then
+      local firstLine="ERROR: $1"
+      shift
+      log "$firstLine" "$@"
+    fi
     log "$(traceback 1)"
     exit 1
   }
@@ -154,7 +161,7 @@ then
     script="$(callerDir 1)/$1"
     shift
     [[ -f "$script" ]] || die "Script not found: '$script'"
-    $script "$@"
+    $script "$@" || die "Failed to execute: [$script $*]"
   }
 
   if [ "${BASH_VERSINFO:-0}" -lt 5 ]

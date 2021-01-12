@@ -10,7 +10,7 @@ find "$searchRoot" -name '*.yaml' -or -name '*.json' | \
 while read file
 do
   yq read "$file" --tojson | \
-  jq --compact-output \
+  jq --compact-output --raw-output \
      --arg file "$file" \
      "select($condition) | $projection"
 done

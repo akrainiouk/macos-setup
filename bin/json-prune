@@ -8,6 +8,8 @@
 | walk(
   if type == "object" then
     with_entries(.value as $v | select($toSkip | indices([$v]) == []))
+  elif type == "array" then
+    map(. as $v | select($toSkip | indices([$v]) == []))
   else
     .
   end

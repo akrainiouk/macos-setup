@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Compares two version fo json or yaml files first normalizing them
+
+source stdlib.sh
+
+(( $# == 2 )) || usage "<lh-file> <rh-file>"
+
+normalize() {
+  (( $# == 2 )) || die "Invalid arguments. Expected <src-file> <dst-file>. Actual: $*"
+  yq read "$1" --tojson | jq --sort-keys > "$2"
+}
+
+lhFile="$1"
+rhFile="$2"
+tmpDir="$(mktemp -d -t "$(basename "$0")")"
+lhJson="$tmpDir/lhf.json"
+rhJson="$tmpDir/rhf.json"
+normalize "$1" "$tmpDir/lhf.json"
+normalize "$2" "$tmpDir/rhf.json"
+
+idiff "$tmpDir/lhf.json" "$tmpDir/rhf.json"

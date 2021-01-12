@@ -5,7 +5,8 @@ source stdlib.sh
 (( $# > 0 )) || usage "[ <curl-options>... ] <url>" "prints HTTP response information in JSON format"
 
 contentFile="$(mktemp)"
-stdErr="$(curl --dump-header - --output "$contentFile" --silent --show-error "$@" 2>&1)" || die "$stdErr"
+stdErr="$(curl --dump-header - --output "$contentFile" --silent --show-error "$@" 2>&1)" \
+|| die "[$(basename "$0") $*]" "$stdErr"
 
 contentLength="$(wc -c "$contentFile" | sed -Ee 's/^ *([^ ]+).*$/\1/g')"
 contentHash="$(md5sum "$contentFile"  | sed -Ee 's/^ *([^ ]+).*$/\1/g')"

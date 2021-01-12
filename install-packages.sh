@@ -46,6 +46,7 @@ brew install websocat  # curl for websocket protocol
 #######################
 brew install java scala groovysdk maven sbt
 brew cask install oracle-jdk
+brew install shellcheck # bash linting
 # Kubernetes
 brew cask install slack
 brew cask install onedrive
