@@ -7,7 +7,7 @@ then
   STD_LIB="$(dirname "$(dirname "$(realpath "${BASH_SOURCE[0]}")")")/lib"
   SELF_DIR="$(dirname "$(realpath "${BASH_SOURCE[1]}")")"
 
-  log() {
+  warn() {
     for line in "$@"
     do
       echo "$line" 1>&2
@@ -68,8 +68,8 @@ then
   error() {
     local firstLine="ERROR: $1"
     shift
-    log "$firstLine" "$@"
-    log "$(traceback 1)"
+    warn "$firstLine" "$@"
+    warn "$(traceback 1)"
     return 1
   }
 
@@ -78,16 +78,16 @@ then
     then
       local firstLine="ERROR: $1"
       shift
-      log "$firstLine" "$@"
+      warn "$firstLine" "$@"
     fi
-    log "$(traceback 1)"
+    warn "$(traceback 1)"
     exit 1
   }
 
   trace() {
     for line in "$@"
     do
-      log "TRACE: $line"
+      warn "TRACE: $line"
     done
   }
 
@@ -96,7 +96,7 @@ then
   intercept() {
     while read line
     do
-      log "INTERCEPT: $line"
+      warn "INTERCEPT: $line"
       echo $line
     done
   }
@@ -166,8 +166,8 @@ then
 
   if [ "${BASH_VERSINFO:-0}" -lt 5 ]
   then
-    log "ERROR: Insufficient bash version in $(basename "$0"): [$BASH_VERSION]. Version >= 5 required."
-    log "       MacOs hint: consider using [#!/usr/bin/env bash] instead of [#!/bin/bash]"
+    warn "ERROR: Insufficient bash version in $(basename "$0"): [$BASH_VERSION]. Version >= 5 required."
+    warn "       MacOs hint: consider using [#!/usr/bin/env bash] instead of [#!/bin/bash]"
     traceback 1
     exit 1
   fi

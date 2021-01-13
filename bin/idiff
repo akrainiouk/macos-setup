@@ -19,7 +19,7 @@ then
 elif ! isRemoteShell && [[ -f "$idea" ]]
 then
   # Idea tends not to return in time so run in the background
-  "$idea" diff $leftFile $rightFile &
+  "$idea" diff $leftFile $rightFile
 else
   diff "$leftFile" "$rightFile"
 fi
