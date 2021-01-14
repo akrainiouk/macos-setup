@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Runs prom2json in docker container (due to lack of homebrew package)
+
+source stdlib.sh
+
+declare -a dockerArgs=() args=()
+
+mapFile() {
+  (( $# >= 1 )) || die "Insufficient arguments"
+  (( $# <= 2 )) || die "Too many arguments"
+  (( $# == 1 )) || { args+=( "$1" ); shift; }
+  local mntSource mntTarget
+  mntSource="$(realpath "$1")"
+  mntTarget="/tmp/$(basename "$1")"
+  dockerArgs+=( --volume "$mntSource:$mntTarget" )
+  args+=( "$mntTarget" )
+}
+
+while (( $# > 0 ))
+do
+  case "$1" in
+  -accept-invalid-cert) args+=( "$1" );     shift;;
+  -cert|-key)           mapFile "$1" "$2";  shift 2;;
+  --help|-help|-h)      args+=( "-help" );  break;;
+  -*)                   die "Invalid option: '$1'";;
+  http://*|https://*)   die "External URLs are not supported: '$1'";;
+#  http://*|https://*)   args+=( "$1" );     shift;;
+  *)                    mapFile "$1";       shift;;
+  esac
+done
+
+docker run --rm --net=host -i "${dockerArgs[@]}" prom/prom2json "${args[@]}"
