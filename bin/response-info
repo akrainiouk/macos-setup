@@ -4,6 +4,17 @@ source stdlib.sh
 
 (( $# > 0 )) || usage "[ <curl-options>... ] <url>" "prints HTTP response information in JSON format"
 
+sanitizeHeaders() {
+  local header
+  local -a jqArgs=()
+  while read header
+  do
+    headerName="$(sed -E 's/^([^:]+).*$/\1/g' <<< "$header")"
+    headerValue="$(sed -E 's/^[^:]+: *//g' <<< "$header")"
+    jq --null-input --arg key "$headerName" --arg value "$headerValue" '{ key: $key, value: $value }'
+  done | jq --slurp 'from_entries'
+}
+
 contentFile="$(mktemp)"
 stdErr="$(curl --dump-header - --output "$contentFile" --silent --show-error "$@" 2>&1)" \
 || die "[$(basename "$0") $*]" "$stdErr"
@@ -13,8 +24,8 @@ contentHash="$(md5sum "$contentFile"  | sed -Ee 's/^ *([^ ]+).*$/\1/g')"
 
 headerDump="$(dos2unix <<< "$stdErr")"
 responseCode="$(head -n 1 <<< "$headerDump" | cut -f 2 -d ' ')"
-headers="$(tail -n +2 <<< "$headerDump" | yq read - --tojson)"
-
+headers="$(tail -n +2 <<< "$headerDump" | sanitizeHeaders)"
+≠
 jq --argjson code          "$responseCode" \
    --argjson contentLength "$contentLength" \
    --arg     contentHash   "$contentHash" \
