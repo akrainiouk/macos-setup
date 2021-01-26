@@ -25,7 +25,7 @@ contentHash="$(md5sum "$contentFile"  | sed -Ee 's/^ *([^ ]+).*$/\1/g')"
 headerDump="$(dos2unix <<< "$stdErr")"
 responseCode="$(head -n 1 <<< "$headerDump" | cut -f 2 -d ' ')"
 headers="$(tail -n +2 <<< "$headerDump" | sanitizeHeaders)"
-≠
+
 jq --argjson code          "$responseCode" \
    --argjson contentLength "$contentLength" \
    --arg     contentHash   "$contentHash" \
