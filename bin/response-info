@@ -4,19 +4,36 @@ source stdlib.sh
 
 (( $# > 0 )) || usage "[ <curl-options>... ] <url>" "prints HTTP response information in JSON format"
 
+declare -r timeTraceFormat='stderr =========
+{
+  "appconnect":    %{time_appconnect},
+  "connect":       %{time_connect},
+  "namelookup":    %{time_namelookup},
+  "pretransfer":   %{time_pretransfer},
+  "redirect":      %{time_redirect},
+  "starttransfer": %{time_starttransfer},
+  "total":         %{time_total}
+}
+'
+
 sanitizeHeaders() {
   local header
-  local -a jqArgs=()
   while read header
   do
-    headerName="$(sed -E 's/^([^:]+).*$/\1/g' <<< "$header")"
-    headerValue="$(sed -E 's/^[^:]+: *//g' <<< "$header")"
-    jq --null-input --arg key "$headerName" --arg value "$headerValue" '{ key: $key, value: $value }'
+    if [[ "$header" =~ "=========" ]]
+    then
+      break
+    elif [[ "$header" != "" ]]
+    then
+      headerName="$(sed -E 's/^([^:]+).*$/\1/g' <<< "$header")"
+      headerValue="$(sed -E 's/^[^:]+: *//g' <<< "$header")"
+      jq --null-input --arg key "$headerName" --arg value "$headerValue" '{ key: $key, value: $value }'
+    fi
   done | jq --slurp 'from_entries'
 }
 
 contentFile="$(mktemp)"
-stdErr="$(curl --dump-header - --output "$contentFile" --silent --show-error "$@" 2>&1)" \
+stdErr="$(curl --write-out "$timeTraceFormat" --dump-header - --output "$contentFile" --silent --show-error "$@" 2>&1)" \
 || die "[$(basename "$0") $*]" "$stdErr"
 
 contentLength="$(wc -c "$contentFile" | sed -Ee 's/^ *([^ ]+).*$/\1/g')"
@@ -25,11 +42,19 @@ contentHash="$(md5sum "$contentFile"  | sed -Ee 's/^ *([^ ]+).*$/\1/g')"
 headerDump="$(dos2unix <<< "$stdErr")"
 responseCode="$(head -n 1 <<< "$headerDump" | cut -f 2 -d ' ')"
 headers="$(tail -n +2 <<< "$headerDump" | sanitizeHeaders)"
-
+timeTrace="$(grep -A 100 "=========" <<< "$headerDump" | grep -v "=========")"
+#echo "$timeTrace"
+#exit
 jq --argjson code          "$responseCode" \
    --argjson contentLength "$contentLength" \
+   --argjson timeTrace     "$timeTrace" \
    --arg     contentHash   "$contentHash" \
-   '{ code: $code, content: { length: $contentLength, hash: $contentHash }, headers: . }' \
+   '{
+       code: $code,
+       time: $timeTrace,
+       content: { length: $contentLength, hash: $contentHash },
+       headers: .
+     }' \
    <<< "$headers"
 
 rm "$contentFile"
