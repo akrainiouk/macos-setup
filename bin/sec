@@ -3,9 +3,14 @@
 
 source stdlib.sh
 
-KEYCHAIN="my-key-chain"
+KEYCHAIN="${SEC_KEYCHAIN:-my-key-chain}"
+
 # Return codes:
-declare -i SUCCESS=0 KEYCHAIN_LOCKED=36 KEY_NOT_FOUND=44
+declare -ri \
+  SUCCESS=0 \
+  KEYCHAIN_LOCKED=36 \
+  KEY_NOT_FOUND=44 \
+  KEYCHAIN_DOES_NOT_EXIST=45
 
 main () {
   if [[ -z "$1" ]]; then
@@ -16,22 +21,135 @@ main () {
     init)   cmd=init_key_chain ;;
     unlock) cmd=unlock_keychain;;
     lock)   cmd=lock_keychain;;
-    ls)     cmd=list_secrets ;;
+    ls)     cmd=list_secrets;;
     get)    cmd=get_secret;;
+    attr)   cmd=get_attributes;;
     set)    cmd=set_secret;;
     rm)     cmd=delete_secret;;
     rename) cmd=rename_secret;;
+    dump)   cmd=dump_database;;
     *)      cmd=print_usage ;;
   esac
   shift
   $cmd "$@"
   returnCode="$?"
   case $returnCode in
-    0);;
+    "$SUCCESS");;
     "$KEYCHAIN_LOCKED") die "Keychain is locked (code $returnCode). Use '$(basename "$0") unlock' to unlock";;
     "$KEY_NOT_FOUND")   die "Key not found (code $returnCode): '$2'";;
-    *)                  die "Error (code $returnCode)"
+    "$KEYCHAIN_DOES_NOT_EXIST") die "Keychain does not exist (code $returnCode): '$KEYCHAIN'";;
+    *)                  die "Error (code $returnCode)";;
   esac
+}
+
+runSecurity() {
+  local -i errCode
+  security "$@"
+  errCode=$?
+  if (( $errCode == $KEYCHAIN_LOCKED ))
+  then
+    unlock_keychain
+    runSecurity "$@"
+    return $?
+  fi
+  return $errCode
+}
+
+# Simulate tree structure based on then naming
+# convention where path segments are separated by '/' character
+# Usage:
+# filterSubpaths <folder>[/<folder>...][/<node>]
+#
+# out of supplied paths filters those that starts with the
+# specified path and exacts only first following segment
+# if there is more then one segment remaining then '/'
+# character is appended at the end indicating a subfolder
+# if the segment is the last segment it is shown as is
+# assuming a leaf node
+#
+filterSubpaths() {
+  local path
+  path="$(sed -e 's/\/$//g' <<< "$1")"
+  jq --raw-input | jq --slurp --raw-output \
+    --arg prefix "$path" \
+    '
+      def isSubpath(path):
+        if path | length == 0 then
+          true
+        elif .[0] != path[0] then
+          false
+        else
+        .[1:] | isSubpath(path[1:])
+        end
+      ;
+      def toItems:
+        if length == 0 then
+          empty
+        elif length == 1 then
+          { type: "file", value: .[0] }
+        else
+          { type: "dir", value: (.[0] + "/") }
+        end
+      ;
+    ($prefix | split("/")) as $path
+    | map(
+      split("/")
+      | select(isSubpath($path))
+      | .[$path|length:]
+      | toItems
+    )
+    | unique[]
+    | .value
+    '
+}
+
+parseAttributes() {
+  sed -E \
+     -e 's/^([^ ])/  \1/g' \
+     -e 's/attributes:$/attributes: |/g' \
+     -e 's/  keychain:/- keychain:/g' \
+  | yq read - --tojson \
+  | jq '.[]' \
+  | jq '
+      def parseTime:
+        capture("^[^ ]+ +\"(?<x>[0-9]+Z)")
+        | .x
+        | strptime("%Y%m%d%H%M%SZ")
+        | mktime
+        | todate
+      ;
+      def sanitizeKeyName:
+        if startswith("0x00000007 ") then sub("0x00000007 "; "labl")
+        elif startswith("0x00000008 ") then sub("0x00000008 "; "08")
+        else sub("^\""; "") | sub("\""; "") end
+      ;
+      def parseKey:
+        capture("(?<name>[^<]+)<(?<type>[^>]+)>")
+        | { name: .name | sanitizeKeyName, type }
+      ;
+      def parseValue:
+        if .type | .=="blob" or .=="uint32" then
+          .value | fromjson
+        elif .type == "timedate" then
+          .value | parseTime
+        else
+          .value
+        end
+      ;
+      def parseAttributes:
+        split("\n")
+        | map(
+            select(length>0)
+            | split("=")
+            | select(.[1]!="<NULL>")
+            | (.[0] | parseKey) + { value: .[1] }
+            | { key: .name, value: parseValue }
+        )
+        | from_entries
+      ;
+
+      .attributes |= parseAttributes
+    '
 }
 
 handle_error() {
@@ -44,63 +162,102 @@ handle_error() {
   esac
 }
 
+dump_database() {
+  security dump-keychain "$KEYCHAIN" \
+  | parseAttributes
+}
+
 init_key_chain() {
   security create-keychain "$KEYCHAIN"
   security set-keychain-settings -u -t 60 "$KEYCHAIN"
 }
 
 unlock_keychain() {
-  security -i unlock-keychain my-key-chain
+  security -i unlock-keychain "$KEYCHAIN"
 }
 
 lock_keychain() {
-  security lock-keychain my-key-chain
+  security lock-keychain "$KEYCHAIN"
 }
 
 list_secrets() {
-  security dump-keychain "$KEYCHAIN" | grep 0x00000007 | awk -F= '{print $2}' | tr -d \"
+  local path="$1"
+  runSecurity dump-keychain "$KEYCHAIN" \
+  | grep 0x00000007 \
+  | awk -F= '{print $2}' | tr -d \" \
+  | filterSubpaths "$path"
 }
 
 get_secret() {
   if [[ -z "$1" ]]; then
     print_usage
   fi
-  security find-generic-password -a $USER -l "$1" -w "$KEYCHAIN"
+  runSecurity find-generic-password -l "$1" -w "$KEYCHAIN"
+}
+
+secret_exists() {
+  runSecurity find-generic-password -l "$1" -w "$KEYCHAIN" > /dev/null 2>&1
+}
+
+get_attributes() {
+  (( $# >= 1 )) || print_usage
+  security find-generic-password -l "$1" "$KEYCHAIN" \
+  | parseAttributes \
+  | jq --compact-output '.attributes | { name: .labl, user: .acct, service: .svce, comment: .desc }'
 }
 
 set_secret() {
-  if [[ -z "$1" ]] || [[ -z "$2" ]]; then
-    print_usage
-  fi
-  security add-generic-password -D secret -U -a $USER -l "$1" -w "$2" "$KEYCHAIN"
+  local USAGE="set <label> [ --pass=<password> ] [ --user=<user> ] [ --service=<service> ] [ --comment=<comment> ] "
+  (( $# >= 1 )) || die "At least one label expected" "$USAGE"
+  local -a opts=()
+  local password account label service
+  while (( $# > 0 ))
+  do
+    arg="$1"
+    shift
+    case "$arg" in
+    --pass=*)    password="${arg#"--pass="}";;
+    --user=*)    account="${arg#"--user="}";;
+    --service=*) service="${arg#"--service="}";;
+    --comment=*) opts+=( "-j" "${arg#"--comment="}" );;
+    -*)          die "Invalid option: '$arg'" "$USAGE";;
+    *)           [[ ! -v label ]] && label="$arg" || die "Only a single label can be provided" "$USAGE";;
+    esac
+  done
+  [[ -v account ]]  || account="$USER"
+  [[ -v password ]] || { read -p "Enter password: " -s password; echo; }
+  [[ -v service ]]  || service="$label"
+  security add-generic-password -U "${opts[@]}" -a "$account" -s "$service" -l "$label" -w "$password" "$KEYCHAIN"
 }
 
 rename_secret() {
   (( $# == 2 )) || print_usage
+  secret_exists "$2" && die "Target secret already exists: [$2]"
   secret="$(get_secret "$1")" || die "Failed to get secret '$1' (error code $?)"
-  set_secret "$2" "$secret" || die "Failed to create new secret '$2' (error code $?)"
-  local output
-  output="$(delete_secret "$1" 2>&1)" || die "Failed to delete secret '$1' (error code $?)"
+  set_secret "$2" --pass="$secret" || die "Failed to create new secret '$2' (error code $?)"
+  delete_secret "$1" 2>&1 || die "Failed to delete secret '$1' (error code $?)"
 }
 
 delete_secret() {
   if [[ -z "$1" ]]; then
     print_usage
   fi
-  security delete-generic-password -a $USER -l "$1" "$KEYCHAIN" > /dev/null || handle_error "$*"
+  security delete-generic-password -l "$1" "$KEYCHAIN" > /dev/null || handle_error "$*"
 }
 
 print_usage() {
   cat << EOF
 Usage:
   sec init                         - initialize keychain
-  sec unlock                       - unlock keychain (to be used from remote shell)
+  sec unlock                       - unlock keychain (useful from remote shell)
   sec lock                         - lock keychain
   sec set <name> <value>           - set secret value
   sec get <name>                   - get secret value
+  sec attr <name>                  - get secret attributes
   sec rename <old-name> <new-name> - rename secret
   sec rm <name>                    - remove secret value
-  sec ls                           - list secrets
+  sec ls <path>                    - list secrets
+  sec dump                         - dump database
 EOF
   exit 0
 }
