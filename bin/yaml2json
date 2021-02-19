@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Converts yaml input to json
+# if no arguments supplied reads input from stdin
+
+if (( $# == 0 ))
+then
+  yq --tojson eval . -
+else
+  for file in "$@"
+  do
+    yq --tojson eval . "$file"
+  done
+fi

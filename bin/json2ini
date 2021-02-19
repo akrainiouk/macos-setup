@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+yaml2json | json2ini.jq
