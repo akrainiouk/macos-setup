@@ -16,13 +16,15 @@ main () {
   if [[ -z "$1" ]]; then
     print_usage
   fi
-
-  case "$1" in
+  local cmd="$1"
+  shift
+  case "$cmd" in
     init)   cmd=init_key_chain ;;
     unlock) cmd=unlock_keychain;;
     lock)   cmd=lock_keychain;;
     ls)     cmd=list_secrets;;
-    get)    cmd=get_secret;;
+    exists) secret_exists "$@"; return $?;;
+    get)    get_secret "$@"; return $?;;
     attr)   cmd=get_attributes;;
     set)    cmd=set_secret;;
     rm)     cmd=delete_secret;;
@@ -30,7 +32,6 @@ main () {
     dump)   cmd=dump_database;;
     *)      cmd=print_usage ;;
   esac
-  shift
   $cmd "$@"
   returnCode="$?"
   case $returnCode in
@@ -46,13 +47,12 @@ runSecurity() {
   local -i errCode
   security "$@"
   errCode=$?
-  if (( $errCode == $KEYCHAIN_LOCKED ))
-  then
-    unlock_keychain
-    runSecurity "$@"
-    return $?
-  fi
-  return $errCode
+  case $errCode in
+  "$SUCCESS" | "$KEY_NOT_FOUND") return $errCode;;
+  "$KEYCHAIN_LOCKED")            unlock_keychain; runSecurity "$@";;
+  "$KEYCHAIN_DOES_NOT_EXIST")    die "Keychain does not exist: '$KEYCHAIN'";;
+  *)                             die "ERROR: $(security error $errCode)";;
+  esac
 }
 
 # Simulate tree structure based on then naming
@@ -192,7 +192,13 @@ get_secret() {
   if [[ -z "$1" ]]; then
     print_usage
   fi
+  secret_exists "$1" || reject $KEY_NOT_FOUND "Secret not found '$1'"
   runSecurity find-generic-password -l "$1" -w "$KEYCHAIN"
+  errCode=$?
+  if (( $errCode == $KEY_NOT_FOUND ))
+  then
+    die "Label not found: '$1'"
+  fi
 }
 
 secret_exists() {
@@ -252,6 +258,7 @@ Usage:
   sec unlock                       - unlock keychain (useful from remote shell)
   sec lock                         - lock keychain
   sec set <name> <value>           - set secret value
+  sec exists <name>                - checks if secret exists for the specified label (key)
   sec get <name>                   - get secret value
   sec attr <name>                  - get secret attributes
   sec rename <old-name> <new-name> - rename secret

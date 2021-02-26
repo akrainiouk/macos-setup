@@ -33,7 +33,8 @@ sanitizeHeaders() {
 }
 
 contentFile="$(mktemp)"
-stdErr="$(curl --write-out "$timeTraceFormat" --dump-header - --output "$contentFile" --silent --show-error "$@" 2>&1)" \
+curlVersion="$(curl --version | head -1 | cut -f 2 -d ' ')"
+stdErr="$(curl --user-agent "$USER/curl/$curlVersion" --write-out "$timeTraceFormat" --dump-header - --output "$contentFile" --silent --show-error "$@" 2>&1)" \
 || die "[$(basename "$0") $*]" "$stdErr"
 
 contentLength="$(wc -c "$contentFile" | sed -Ee 's/^ *([^ ]+).*$/\1/g')"
@@ -43,15 +44,12 @@ headerDump="$(dos2unix <<< "$stdErr")"
 responseCode="$(head -n 1 <<< "$headerDump" | cut -f 2 -d ' ')"
 headers="$(tail -n +2 <<< "$headerDump" | sanitizeHeaders)"
 timeTrace="$(grep -A 100 "=========" <<< "$headerDump" | grep -v "=========")"
-#echo "$timeTrace"
-#exit
 jq --argjson code          "$responseCode" \
    --argjson contentLength "$contentLength" \
    --argjson timeTrace     "$timeTrace" \
    --arg     contentHash   "$contentHash" \
    '{
        code: $code,
-       time: $timeTrace,
        content: { length: $contentLength, hash: $contentHash },
        headers: .
      }' \

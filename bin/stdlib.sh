@@ -66,11 +66,26 @@ then
   }
 
   error() {
+    print_error "$@"
+    warn "$(traceback 1)"
+    return 1
+  }
+
+  print_error() {
     local firstLine="ERROR: $1"
     shift
     warn "$firstLine" "$@"
-    warn "$(traceback 1)"
-    return 1
+  }
+
+  ## Dies printing supplied error messages but without
+  ## dumping stack trace
+  ## Usage reject 1 "Failed for some reason"
+  reject() {
+    (( $# > 1 )) || die "invalid arguments. Expected <error-code> [ <error-message>... ]"
+    local -i errCode=$1
+    shift
+    print_error "$@"
+    exit $errCode
   }
 
   die() {
