@@ -119,15 +119,31 @@ then
   # Prints out caller script path
   # Usage: callerPath [ <level> ]
   callerPath() {
-    local level=$(( ${1:-0} - 1 ))
+    local level=$(( ${1:-0} + 1 ))
+    (( ${#BASH_SOURCE[@]} > $level )) || die "Requested level exceeds actual caller nesting level"
     realpath "${BASH_SOURCE[$level]}"
   }
 
   # Prints out caller script directory
   # Usage: callerDir [ <level> ]
   callerDir() {
-    local level=$(( ${1:-0} - 1 ))
+    local level=$(( ${1:-0} + 1 ))
     dirname "$(callerPath $level)"
+  }
+
+  ## Resolve specified path against caller script directory
+  ## If specified path is an absolute path it is kep intact (but canonicalized)
+  ## If specified path is relative path it gets resolved against caller directory
+  ## Usage: resolveFile [ <level> ] <path>
+  resolveFile() {
+    local level=1
+    (( $# <  2 )) || { level=$(( $1 + 1 )); shift; }
+    (( $# == 1 )) || die "Insufficient arguments. Expected [ <path> ]"
+    file="$1"
+    case "$file" in
+    /*) realpath "$file";;
+    *)  realpath "$(callerDir 1)/$file";;
+    esac
   }
 
   # Prints out usage message and exits
