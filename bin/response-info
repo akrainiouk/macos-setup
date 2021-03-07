@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source stdlib.sh
+source lib-std.bash
 
 (( $# > 0 )) || usage "[ <curl-options>... ] <url>" "prints HTTP response information in JSON format"
 

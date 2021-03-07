@@ -1,0 +1,137 @@
+#!/usr/bin/env bash
+source lib-std.bash
+
+if (( $# < 2 ))
+then
+  usage "<server-name> <command> [ <args>... ]>
+Supported commands:
+  set-credentials               - configure server credentials (interactive)
+  history <limit>               - show build history of up to <limit> builds (in reverse order)
+  get-build <job> <build-id>    - information about specific build
+  last <job>                    - information about last build
+  last-completed <job>          - information about last completed build
+  last-failed    <job>          - information about last failed build
+  last-successful <job>         - information about last successful build
+  trigger <job> [ --<name>=<value>... ] - trigger build with specified parameters
+  plugin-list                   - get list of active plugins
+  raw <path> <curl-args>        - get raw jenkins response
+"
+fi
+
+secPrefix="jenkins"
+baseUrl="$1"
+cmd="$2"
+shift 2
+
+baseUrl="https://jenkins-granite.bsl.eur.adobe.com"
+
+curlResponse() {
+  path="$1"
+  shift
+  curl --user "$USER@adobe.com:$(sec get jenkins-basel)" --silent --show-error "$@" "$baseUrl/$path"
+}
+
+cdnApply() {
+  path="$1"
+  shift
+  curlResponse "/job/SkylineCDNApply/$path/api/json" "$@"
+}
+
+buildInfo() {
+  jq '
+    def findFirst(condition): map(select(condition))[0];
+
+    def buildStatus:
+      if .result then
+        .result
+      elif .building then
+        "PENDING"
+      else
+        "UNKNOWN"
+      end
+    ;
+
+    def buildParameters:
+      .actions
+      | findFirst(._class == "hudson.model.ParametersAction").parameters
+      | map({ key: .name, value })
+      | from_entries
+    ;
+
+    {
+      id,
+      status: buildStatus,
+      params: buildParameters
+    }'
+}
+
+buildWithParameters() {
+  local params=() responseInfo
+  while (( $# > 0 ))
+  do
+    case "$1" in
+    --*) params+=( "--data" "$(sed -e 's/^--//g' <<< "$1")" ); shift;;
+    *)   die "Invalid parameter: '$1'";;
+    esac
+  done
+  cdnApply "buildWithParameters" "${params[@]}" || die
+}
+
+buildHistory() {
+  local response buildId="lastBuild"
+  local -i limit="${1:-10}"
+  while [[ "$buildId" != "null" ]] && (( $limit > 0 ))
+  do
+    response="$(cdnApply "$buildId")"
+    buildInfo <<< "$response" | jq --compact-output
+    limit=$(( $limit - 1 ))
+    buildId="$(jq --raw-output '.previousBuild.number' <<< "$response")"
+  done
+}
+
+pluginList() {
+  curlResponse '/pluginManager/api/json?depth=1&xpath=/*/*/shortName%7C/*/*/version&wrapper=plugins' \
+  | jq '.plugins|map(select(.active)|{key: .shortName, value:.version})|sort|from_entries'
+
+}
+
+userInput() {
+  prompt="$1"
+  default="$2"
+  if [[ "$default" == "" ]]
+  then
+    read -p "$prompt " response
+    echo "$response"
+  else
+    echo -n "$prompt [$default]: "
+    read response
+    if [[ $response == "" ]]
+    then
+      echo "$default"
+    else
+      echo "$response"
+    fi
+  fi
+}
+
+setCredentials() {
+  local serverUrl serverToken response
+  serverUrl="$(sec get "$secPrefix-$serverName-url")"
+  read "$prompt [$serverUrl]" response
+  [[ "$response" == "" ]] || serverUrl="$response"
+  serverToken="$(sec get "$sec")"
+}
+
+case "$cmd" in
+set-credentials) setCredentials "$1";;
+history)         buildHistory "$1";;
+get)             cdnApply "$1"                  | buildInfo;;
+last)            cdnApply "lastBuild"           | buildInfo;;
+last-completed)  cdnApply "lastCompletedBuild"  | buildInfo;;
+last-cuccessful) cdnApply "lastSuccessfulBuild" | buildInfo;;
+last-failed)     cdnApply "lastFailedBuild"     | buildInfo;;
+trigger)         buildWithParameters "$@";;
+raw)             curlResponse "$@";;
+plugin-list)     pluginList;;
+*)               die "Invalid command '$cmd'";;
+esac

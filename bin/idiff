@@ -3,7 +3,7 @@
 # in remote or headless shell just runs diff command
 # when UI is available uses idiff provided by intellij idea
 
-source stdlib.sh
+source lib-std.bash
 
 (( $# == 2 )) || usage "<left-file> <right-file>"
 leftFile="$1"

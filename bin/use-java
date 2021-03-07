@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+getJavaVersions() {
+  local -a javaRoots=()
+  local path
+#  echo "OpenJDK versions:"
+  for javaRoot in /usr/local/opt/openjdk*
+  do
+    path="$(realpath "$javaRoot")"
+    javaRoots+=( "$path" )
+  done
+
+#  echo "Macos System installed versions:"
+  for javaRoot in /Library/Java/JavaVirtualMachines/*
+  do
+    path="$(realpath "$javaRoot")"
+    javaRoots+=( "$path" )
+  done
+#  echo "User specific:"
+  for javaRoot in "$HOME"/Library/Java/JavaVirtualMachines/*
+  do
+    path="$(realpath "$javaRoot")"
+    javaRoots+=( "$path" )
+  done
+
+  echo "${javaRoots[*]}"
+#  sort <<< "${javaRootss[@]}"
+}
+
+getJavaVersions
+

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Compares two version fo json or yaml files first normalizing them
 
-source stdlib.sh
+source lib-std.bash
 
 (( $# == 2 )) || usage "<lh-file> <rh-file>"
 

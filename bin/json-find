@@ -1,4 +1,4 @@
-source stdlib.sh
+source lib-std.bash
 
 (( $# >= 2 )) || { usage "<search-root-dir> <condition> [ <projection> ]"; exit 1; }
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Runs prom2json in docker container (due to lack of homebrew package)
 
-source stdlib.sh
+source lib-std.bash
 
 declare -a dockerArgs=() args=()
 

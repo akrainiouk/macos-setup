@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+urldecode() {
+  local i="${*//+/ }"
+  echo -e "${i//%/\\x}"
+}
+
+obfuscated() { : "${*//+/ }"; echo -e "${_//%/\\x}"; }
+
+inputFile="${1:-/dev/stdin}"
+while read line
+do
+  urldecode "$line"
+done < "$inputFile"
+

@@ -7,6 +7,13 @@ then
   STD_LIB="$(dirname "$(dirname "$(realpath "${BASH_SOURCE[0]}")")")/lib"
   SELF_DIR="$(dirname "$(realpath "${BASH_SOURCE[1]}")")"
 
+  # Error codes
+
+  # REJECTED - precondition failed. Assumes user friendly error message and no stack trace.
+  REJECTED=254
+  # ASSERTION - internal check failed. Stack trace will be automatically produced.
+  ASSERTION_FAILED=253
+
   warn() {
     for line in "$@"
     do
@@ -79,13 +86,11 @@ then
 
   ## Dies printing supplied error messages but without
   ## dumping stack trace
-  ## Usage reject 1 "Failed for some reason"
+  ## Usage reject "Failed for some reason"
   reject() {
-    (( $# > 1 )) || die "invalid arguments. Expected <error-code> [ <error-message>... ]"
-    local -i errCode=$1
-    shift
+    (( $# >= 1 )) || die "invalid arguments. Expected <error-message> [ <error-message>... ]"
     print_error "$@"
-    exit $errCode
+    exit "$REJECTED"
   }
 
   die() {
@@ -96,7 +101,7 @@ then
       warn "$firstLine" "$@"
     fi
     warn "$(traceback 1)"
-    exit 1
+    exit $ASSERTION_FAILED
   }
 
   trace() {
@@ -155,7 +160,7 @@ then
     (( $# >= 1 )) || die "Missing argument <arg-list>"
     local arglist="$1"
     shift
-    echo "Usage: $(basename "$(callerPath)") $arglist"
+    echo "Usage: $(basename "$(callerPath 1)") $arglist"
     for line in "$@"
     do
       echo "$line"
@@ -203,5 +208,6 @@ then
     exit 1
   fi
 
+  set -e
 fi
 

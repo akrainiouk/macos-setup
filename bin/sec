@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Provides simplified access to a key chain (macos version)
 
-source stdlib.sh
+source lib-std.bash
 
 KEYCHAIN="${SEC_KEYCHAIN:-my-key-chain}"
 
@@ -192,7 +192,7 @@ get_secret() {
   if [[ -z "$1" ]]; then
     print_usage
   fi
-  secret_exists "$1" || reject $KEY_NOT_FOUND "Secret not found '$1'"
+  secret_exists "$1" || reject "Secret not found '$1'"
   runSecurity find-generic-password -l "$1" -w "$KEYCHAIN"
   errCode=$?
   if (( $errCode == $KEY_NOT_FOUND ))
