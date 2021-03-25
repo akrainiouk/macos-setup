@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 source lib-std.bash
 
-if (( $# < 2 ))
+if (( $# < 1 ))
 then
   usage "<server-name> <command> [ <args>... ]>
 Supported commands:
@@ -14,14 +14,15 @@ Supported commands:
   last-successful <job>         - information about last successful build
   trigger <job> [ --<name>=<value>... ] - trigger build with specified parameters
   plugin-list                   - get list of active plugins
+  queue                         - print current jenkins queue
   raw <path> <curl-args>        - get raw jenkins response
 "
 fi
 
 secPrefix="jenkins"
-baseUrl="$1"
-cmd="$2"
-shift 2
+#baseUrl="$1"
+#cmd="$2"
+#shift 2
 
 baseUrl="https://jenkins-granite.bsl.eur.adobe.com"
 
@@ -29,6 +30,11 @@ curlResponse() {
   path="$1"
   shift
   curl --user "$USER@adobe.com:$(sec get jenkins-basel)" --silent --show-error "$@" "$baseUrl/$path"
+}
+
+getQueue() {
+  curlResponse "/queue/api/json" \
+  | jq --compact-output '.items[] | { id, task: .task.name, stuck, pending, blocked, buildable }'
 }
 
 cdnApply() {
@@ -122,6 +128,8 @@ setCredentials() {
   serverToken="$(sec get "$sec")"
 }
 
+cmd="$1"
+shift
 case "$cmd" in
 set-credentials) setCredentials "$1";;
 history)         buildHistory "$1";;
@@ -133,5 +141,6 @@ last-failed)     cdnApply "lastFailedBuild"     | buildInfo;;
 trigger)         buildWithParameters "$@";;
 raw)             curlResponse "$@";;
 plugin-list)     pluginList;;
+queue)           getQueue;;
 *)               die "Invalid command '$cmd'";;
 esac
