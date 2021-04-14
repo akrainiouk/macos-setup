@@ -93,12 +93,13 @@ then
     exit "$REJECTED"
   }
 
+  ## Dies printing supplied error message followed
+  ## by the stack trace
+  ## Usage: die "Failed for some reason" "more info"...
   die() {
     if (( $# > 0 ))
     then
-      local firstLine="ERROR: $1"
-      shift
-      warn "$firstLine" "$@"
+      print_error "$@"
     fi
     warn "$(traceback 1)"
     exit $ASSERTION_FAILED

@@ -16,6 +16,8 @@ idea='/Applications/IntelliJ IDEA.app/Contents/MacOS/idea'
 if diff -q "$leftFile" "$rightFile"
 then
   echo "Files are identical"
+elif ! isRemoteShell && which code; then
+  code --diff "$leftFile" "$rightFile"
 elif ! isRemoteShell && [[ -f "$idea" ]]
 then
   # Idea tends not to return in time so run in the background
