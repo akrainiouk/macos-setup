@@ -2,10 +2,10 @@
 # Allowing to include other library scripts (from lib directory)
 # as well as basic support for error reporting
 
-if [[ "${STD_LIB}" == "" ]]
+if [[ "${LIB_STD}" == "" ]]
 then
-  STD_LIB="$(dirname "$(dirname "$(realpath "${BASH_SOURCE[0]}")")")/lib"
-  SELF_DIR="$(dirname "$(realpath "${BASH_SOURCE[1]}")")"
+  LIB_STD="$(dirname "$(dirname "$(realpath "${BASH_SOURCE[0]}")")")/lib"
+  declare -r LIB_STD
 
   # Error codes
 
@@ -209,6 +209,6 @@ then
     exit 1
   fi
 
-  set -e
+  set -o pipefail -o errexit
 fi
 

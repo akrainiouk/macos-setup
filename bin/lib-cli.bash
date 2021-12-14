@@ -19,17 +19,17 @@
 #   It can also take JSON specification of supported command line arguments
 #
 
-if [[ ! -v STD_LIB ]]
+if [[ ! -v LIB_STD ]]
 then
   source lib-std.bash
   die "[source lib-std.bash] is required"
 fi
 
-optName() {
+optKey() {
   sed -Ee 's/^--([^=]+).*/\1/g' <<< "$1"
 }
 
-optValue() {
+optVal() {
   if ! grep -q '=' <<< "$1"; then
     echo ""
   else
@@ -37,25 +37,28 @@ optValue() {
   fi
 }
 
-declare -A OPTS
-declare -a ARGS
+opts() {
+  echo -n "( "
+  while (( $# > 0 )); do
+    case "$1" in
+    --*) echo -n "[$(optKey "$1")]='$(optVal "$1")' ";;
+    -*)  reject "Short options are not supported: '$1'";;
+    *)   ;;
+    esac
+    shift
+  done
+  echo ")"
+}
 
-[[ ! -v ARGS ]] || die "ARGS variable already exists"
-[[ ! -v OPTS ]] || die "OPTS variable already exists"
-export -a ARGS=()
-while (( $# > 0 ))
-do
-  case "$1" in
-  --*) name="$(optName "$1")"
-       val="$(optValue "$1")"
-       OPTS+=( ["$name"]="$val" )
-       ;;
-  -*)  reject "Short options are not supported: '$1'";;
-  *)   ARGS+=( "$1" );;
-  esac
-  shift
-done
-
-declare -r OPTS ARGS
-unset optName
-unset optValue
+args() {
+  echo -n "( "
+  while (( $# > 0 )); do
+    case "$1" in
+    --*) ;;
+    -*)  reject "Short options are not supported: '$1'";;
+    *)   echo -n "'$1' ";;
+    esac
+    shift
+  done
+  echo ")"
+}

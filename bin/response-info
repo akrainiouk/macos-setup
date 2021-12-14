@@ -12,7 +12,9 @@ declare -r timeTraceFormat='stderr =========
   "pretransfer":   %{time_pretransfer},
   "redirect":      %{time_redirect},
   "starttransfer": %{time_starttransfer},
-  "total":         %{time_total}
+  "total":         %{time_total},
+  "size_header":   %{size_header},
+  "size_download": %{size_download}
 }
 '
 
@@ -48,11 +50,11 @@ jq --argjson code          "$responseCode" \
    --argjson contentLength "$contentLength" \
    --argjson timeTrace     "$timeTrace" \
    --arg     contentHash   "$contentHash" \
+   --arg     contentFile   "$contentFile" \
    '{
        code: $code,
-       content: { length: $contentLength, hash: $contentHash },
+#       time_trace: $timeTrace,
+       content: { length: $contentLength, hash: $contentHash, file: $contentFile },
        headers: .
      }' \
    <<< "$headers"
-
-rm "$contentFile"

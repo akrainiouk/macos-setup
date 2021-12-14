@@ -108,7 +108,7 @@ parseAttributes() {
      -e 's/^([^ ])/  \1/g' \
      -e 's/attributes:$/attributes: |/g' \
      -e 's/  keychain:/- keychain:/g' \
-  | yq read - --tojson \
+  | yq eval .  - --tojson \
   | jq '.[]' \
   | jq '
       def parseTime:
