@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# turns result of json query into return status according to jq -e
+source lib-std.bash
+
+(( $# == 1 )) || usage "<jq-options> <jq-filter>"
+
+yq eval . - --tojson | jq --exit-status "$@" > /dev/null
+

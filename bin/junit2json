@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Converts junit test report (xml) to json format
+# Usage: cat junit-test.xml | junit2json
+xml2json --pretty --strip_text --strip_namespace \
+| jq '
+    walk(
+      if type == "object" then 
+        with_entries(.key |= sub("^@"; "")) 
+      else 
+        . 
+      end
+    )'
