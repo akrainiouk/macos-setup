@@ -4,8 +4,7 @@
 
 if [[ "${LIB_STD}" == "" ]]
 then
-  LIB_STD="$(dirname "$(dirname "$(realpath "${BASH_SOURCE[0]}")")")/lib"
-  declare -r LIB_STD
+  declare -r LIB_STD="$(dirname "$(dirname "$(realpath "${BASH_SOURCE[0]}")")")/lib"
 
   # Error codes
 
@@ -209,6 +208,5 @@ then
     exit 1
   fi
 
-  set -o pipefail -o errexit
 fi
 
