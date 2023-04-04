@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+
+source bash-libs lib-scaffold lib-json
+
+unfold() {
+  local contents="$1" root="$2"
+  local item name value type
+  [[ -d "$root" ]] || mkdir $root
+  while read item; do
+    name="$(json.get <<< "$item" '.key')"
+    type="$(json.get <<< "$item" '.value|type')"
+    case "$type" in
+    object)        doUnfold "$(json.get <<< "$item" '.value')" "$root/$name";;
+    string|number) json.get <<< "$item" > "$root/$name";;
+    *)             scaffold.fail "Invalid item type: '$name': '$type' = '$value'";;
+    esac
+  done <<< "$(jq <<< "$contents" "to_entries[]" --compact-output)"
+}
+
+isEmptyDir() {
+  [[ -d "$1" ]] || scaffold.fail "Directory not found $1"
+  [[ -z "$(ls -A "$1")" ]] 
+}
+
+#####################################################
+# main
+#####################################################
+
+args=()
+archive() { mv "$1" "$2"; }
+while (( $# > 0 )); do
+  case "$1" in
+  --zip) archive() { cd "$1"||return 1; zip -r "$2" *; };;
+  --tgz) archive() { tar -czf "$2" -C "$1" ./; };;
+  --tar) archive() { tar -cf "$2" -C "$1" ./; };;
+  -*)    fail <<< "Invalid option $1"; return 1;;
+  *)     args+=( "$1" );;
+  esac
+  shift
+done
+
+case ${#args[@]} in
+1) content="$(yq --output-format=json)"; dst="${args[0]}";;
+2) content="$(yq <<< "${args[0]}" --output-format=json)"; dst="${args[1]}";;
+*) scaffold.usage "[ <content-yaml> ] <dst-file>";;
+esac
+[[ ! -e "$dst" ]] || scaffold.reject "Destination already exists: '$dst'"
+dst="$(realpath "$dst")"
+
+if [[ -v BATS_TEST_TMPDIR ]]; then
+  tmpDir="$(mktemp -d "$BATS_TEST_TMPDIR/unfold.XXXXXXX")"
+elif [[ -v BATS_FILE_TMPDIR ]]; then
+  tmpDir="$(mktemp -d "$BATS_FILE_TMPDIR/unfold.XXXXXXX")"
+else
+  tmpDir="$(mktemp -d)"
+fi
+unfold "$content" "$tmpDir"
+archive "$tmpDir" "$dst"

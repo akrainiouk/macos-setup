@@ -1,60 +1,45 @@
 #!/usr/bin/env bash
 
-source lib-std.bash
+source bash-libs lib-scaffold lib-json
 
-(( $# > 0 )) || usage "[ <curl-options>... ] <url>" "prints HTTP response information in JSON format"
+declare -a args=()
+while (( $# > 0 )); do 
+  case "$1" in
+  -o | --output)      contentFile="$2"; shift 2;;
+  -D | --dump-header) reject "Unsupported option: '$1''";;
+  -w | --write-out)   reject "Unsupported option: '$1'";;
+  *) args+=( "$1" ); shift;;
+  esac
+done
 
-declare -r timeTraceFormat='stderr =========
-{
-  "appconnect":    %{time_appconnect},
-  "connect":       %{time_connect},
-  "namelookup":    %{time_namelookup},
-  "pretransfer":   %{time_pretransfer},
-  "redirect":      %{time_redirect},
-  "starttransfer": %{time_starttransfer},
-  "total":         %{time_total},
-  "size_header":   %{size_header},
-  "size_download": %{size_download}
+[[ -v contentFile ]] || {
+  contentFile="$(mktemp)"
 }
-'
-
-sanitizeHeaders() {
-  local header
-  while read header
-  do
-    if [[ "$header" =~ "=========" ]]
-    then
-      break
-    elif [[ "$header" != "" ]]
-    then
-      headerName="$(sed -E 's/^([^:]+).*$/\1/g' <<< "$header")"
-      headerValue="$(sed -E 's/^[^:]+: *//g' <<< "$header")"
-      jq --null-input --arg key "$headerName" --arg value "$headerValue" '{ key: $key, value: $value }'
-    fi
-  done | jq --slurp 'from_entries'
-}
-
-contentFile="$(mktemp)"
-curlVersion="$(curl --version | head -1 | cut -f 2 -d ' ')"
-stdErr="$(curl --user-agent "$USER/curl/$curlVersion" --write-out "$timeTraceFormat" --dump-header - --output "$contentFile" --silent --show-error "$@" 2>&1)" \
-|| die "[$(basename "$0") $*]" "$stdErr"
-
-contentLength="$(wc -c "$contentFile" | sed -Ee 's/^ *([^ ]+).*$/\1/g')"
-contentHash="$(md5sum "$contentFile"  | sed -Ee 's/^ *([^ ]+).*$/\1/g')"
-
-headerDump="$(dos2unix <<< "$stdErr")"
-responseCode="$(head -n 1 <<< "$headerDump" | cut -f 2 -d ' ')"
-headers="$(tail -n +2 <<< "$headerDump" | sanitizeHeaders)"
-timeTrace="$(grep -A 100 "=========" <<< "$headerDump" | grep -v "=========")"
-jq --argjson code          "$responseCode" \
-   --argjson contentLength "$contentLength" \
-   --argjson timeTrace     "$timeTrace" \
-   --arg     contentHash   "$contentHash" \
-   --arg     contentFile   "$contentFile" \
-   '{
-       code: $code,
-#       time_trace: $timeTrace,
-       content: { length: $contentLength, hash: $contentHash, file: $contentFile },
-       headers: .
-     }' \
-   <<< "$headers"
+  
+response="$(curl --silent --show-error \
+  --output "$contentFile" \
+  --write-out '{ "meta": %{json}, "headers": %{header_json} }' \
+  "${args[@]}"
+)" || exit $?
+hash="$(sha256sum "$contentFile" | cut -f 1 -d ' ')"
+content="null"
+if json.test <<< "$response" '.meta.size_download > 0 and .meta.size_download < 2048'; then
+  contentType="$(jq <<< "$response" --raw-output '.headers["content-type"][-1]')"
+  case "$contentType" in
+  */xml*)  content="$(yq --input-format xml < "$contentFile" --output-format json || jq --raw-input --slurp)";;
+  */json*) content="$(jq < "$contentFile" || jq --raw-input --slurp)";;
+  text/*)  content="$(jq < "$contentFile" --raw-input --slurp)";;
+  esac
+fi
+jq <<< "$response" --argjson content "$content" --arg hash "$hash" '
+  {
+    code: .meta.http_code, 
+    headers: .headers | with_entries(.value |= if length == 1 then .[0] else . end),
+    content: {
+      length: .meta.size_download,
+      hash: $hash, 
+      file: .meta.filename_effective
+    }
+  }
+  | if $content then .content.body = $content else . end
+' | yq --prettyPrint
