@@ -21,7 +21,7 @@ def tableHeader:
   end
 ;
 
-def tableContent(columns): . as $value | columns | map($value[.]) | tableRow("|");
+def tableContent(columns): . as $value | columns | map($value[.] // "") | tableRow("|");
 
 # An alternative to an embedded keys function that
 # preserves the original order of object keys
